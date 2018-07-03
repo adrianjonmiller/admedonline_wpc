@@ -26,7 +26,7 @@ get_header(); ?>
 	 * Grab the IDs of all the image attachments in a gallery so we can get the URL of the next adjacent image in a gallery,
 	 * or the first image (if we're looking at the last image in a gallery), or, in a gallery of one, just the link to that image file
 	 */
-	$attachments = array_values( get_children( array( 'post_parent' => $post->post_parent, 'post_status' => 'inherit', 'post_type' => 'attachment', 'post_mime_type' => 'image', 'order' => 'ASC', 'orderby' => 'menu_order ID' ) ) );
+	$attachments = array_values( get_children( array( 'post_parent' => $post->post_parent, 'post_status' => 'inherit', 'post_type' => 'attachment', 'post_mime_type' => 'image', 'order' => 'ASC', 'orderby' => 'menu_order ID', 'suppress_filters' => false ) ) );
 	foreach ( $attachments as $k => $attachment ) {
 		if ( $attachment->ID == $post->ID )
 			break;
@@ -46,6 +46,16 @@ get_header(); ?>
 	}
 ?>
 								<a href="<?php echo esc_url( $next_attachment_url ); ?>" title="<?php echo esc_attr( get_the_title() ); ?>" rel="attachment"><?php
+
+								/**
+								 * Filter the Mobile Theme image size.
+								 *
+								 * @module minileven
+								 *
+								 * @since 1.8.0
+								 *
+								 * @param int Image size in pixels.
+								 */
 								$attachment_size = apply_filters( 'minileven_attachment_size', 848 );
 								echo wp_get_attachment_image( $post->ID, array( $attachment_size, 1024 ) ); // filterable image width with 1024px limit for image height.
 								?></a>

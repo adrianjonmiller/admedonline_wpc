@@ -9,6 +9,10 @@ class WPCOM_JSON_API_List_Comments_Walker extends Walker {
 	);
 
 	public function start_el( &$output, $object, $depth = 0, $args = array(), $current_object_id = 0 ) {
+		if ( ! is_array( $output ) ) {
+			$output = array();
+		}
+
 		$output[] = $object->comment_ID;
 	}
 
@@ -57,10 +61,40 @@ class WPCOM_JSON_API_List_Comments_Walker extends Walker {
 	}
 }
 
+new WPCOM_JSON_API_List_Comments_Endpoint( array(
+	'description' => 'Get a list of recent comments.',
+	'group'       => 'comments',
+	'stat'        => 'comments',
+
+	'method'      => 'GET',
+	'path'        => '/sites/%s/comments/',
+	'path_labels' => array(
+		'$site' => '(int|string) Site ID or domain',
+	),
+
+	'example_request' => 'https://public-api.wordpress.com/rest/v1/sites/en.blog.wordpress.com/comments/?number=2'
+) );
+
+new WPCOM_JSON_API_List_Comments_Endpoint( array(
+	'description' => 'Get a list of recent comments on a post.',
+	'group'       => 'comments',
+	'stat'        => 'posts:1:replies',
+
+	'method'      => 'GET',
+	'path'        => '/sites/%s/posts/%d/replies/',
+	'path_labels' => array(
+		'$site'    => '(int|string) Site ID or domain',
+		'$post_ID' => '(int) The post ID',
+	),
+
+	'example_request' => 'https://public-api.wordpress.com/rest/v1/sites/en.blog.wordpress.com/posts/7/replies/?number=2'
+) );
+
 // @todo permissions
 class WPCOM_JSON_API_List_Comments_Endpoint extends WPCOM_JSON_API_Comment_Endpoint {
-	var $response_format = array(
+	public $response_format = array(
 		'found'    => '(int) The total number of comments found that match the request (ignoring limits, offsets, and pagination).',
+		'site_ID'  => '(int) The site ID',
 		'comments' => '(array:comment) An array of comment objects.',
 	);
 
@@ -143,7 +177,7 @@ class WPCOM_JSON_API_List_Comments_Endpoint extends WPCOM_JSON_API_Comment_Endpo
 			}
 			break;
 		default :
-			if ( !current_user_can( 'moderate_comments' ) ) {
+			if ( ! current_user_can( 'edit_posts' ) ) {
 				return new WP_Error( 'unauthorized', 'User cannot read non-approved comments', 403 );
 			}
 			if ( 'unapproved' === $args['status'] ) {
@@ -228,7 +262,9 @@ class WPCOM_JSON_API_List_Comments_Endpoint extends WPCOM_JSON_API_Comment_Endpo
 		if ( $args['hierarchical'] ) {
 			$walker = new WPCOM_JSON_API_List_Comments_Walker;
 			$comment_ids = $walker->paged_walk( $comments, get_option( 'thread_comments_depth', -1 ), isset( $args['page'] ) ? $args['page'] : 1 , $args['number'] );
-			$comments = array_map( 'get_comment', $comment_ids );
+			if ( ! empty( $comment_ids ) ) {
+				$comments = array_map( 'get_comment', $comment_ids );
+			}
 		}
 
 		$return = array();
@@ -236,22 +272,28 @@ class WPCOM_JSON_API_List_Comments_Endpoint extends WPCOM_JSON_API_Comment_Endpo
 		foreach ( array_keys( $this->response_format ) as $key ) {
 			switch ( $key ) {
 			case 'found' :
-				$return[$key] = (int) $found;
+				$return[ $key ] = (int) $found;
+				break;
+			case 'site_ID' :
+				$return[ $key ] = (int) $blog_id;
 				break;
 			case 'comments' :
 				$return_comments = array();
-				foreach ( $comments as $comment ) {
-					$the_comment = $this->get_comment( $comment->comment_ID, $args['context'] );
-					if ( $the_comment && !is_wp_error( $the_comment ) ) {
-						$return_comments[] = $the_comment;
+				if ( ! empty( $comments ) ) {
+					foreach ( $comments as $comment ) {
+						$the_comment = $this->get_comment( $comment->comment_ID, $args['context'] );
+						if ( $the_comment && !is_wp_error( $the_comment ) ) {
+							$return_comments[] = $the_comment;
+						}
 					}
 				}
 
 				if ( $return_comments ) {
+					/** This action is documented in json-endpoints/class.wpcom-json-api-site-settings-endpoint.php */
 					do_action( 'wpcom_json_api_objects', 'comments', count( $return_comments ) );
 				}
 
-				$return[$key] = $return_comments;
+				$return[ $key ] = $return_comments;
 				break;
 			}
 		}

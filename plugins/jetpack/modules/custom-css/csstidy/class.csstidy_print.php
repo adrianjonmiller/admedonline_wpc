@@ -46,19 +46,19 @@ class csstidy_print {
 	 * @var string
 	 * @access private
 	 */
-	var $input_css = '';
+	public $input_css = '';
 	/**
 	 * Saves the formatted CSS string
 	 * @var string
 	 * @access public
 	 */
-	var $output_css = '';
+	public $output_css = '';
 	/**
 	 * Saves the formatted CSS string (plain text)
 	 * @var string
 	 * @access public
 	 */
-	var $output_css_plain = '';
+	public $output_css_plain = '';
 
 	/**
 	 * Constructor
@@ -66,7 +66,7 @@ class csstidy_print {
 	 * @access private
 	 * @version 1.0
 	 */
-	function csstidy_print(&$css) {
+	function __construct(&$css) {
 		$this->parser = & $css;
 		$this->css = & $css->css;
 		$this->template = & $css->template;
@@ -74,6 +74,10 @@ class csstidy_print {
 		$this->charset = & $css->charset;
 		$this->import = & $css->import;
 		$this->namespace = & $css->namespace;
+	}
+
+	function csstidy_print(&$css) {
+		$this->__construct($css);
 	}
 
 	/**

@@ -6,7 +6,7 @@ define( 'WP_SHARING_PLUGIN_VERSION', JETPACK__VERSION );
 
 class Sharing_Service {
 	private $global = false;
-	var $default_sharing_label = '';
+	public $default_sharing_label = '';
 
 	public function __construct() {
 		$this->default_sharing_label = __( 'Share this:', 'jetpack' );
@@ -40,23 +40,42 @@ class Sharing_Service {
 	 * Gets a list of all available service names and classes
 	 */
 	public function get_all_services( $include_custom = true ) {
+		global $wp_version;
 		// Default services
 		// if you update this list, please update the REST API tests
 		// in bin/tests/api/suites/SharingTest.php
 		$services = array(
-			'email'         => 'Share_Email',
-			'print'         => 'Share_Print',
-			'facebook'      => 'Share_Facebook',
-			'linkedin'      => 'Share_LinkedIn',
-			'reddit'        => 'Share_Reddit',
-			'stumbleupon'   => 'Share_Stumbleupon',
-			'twitter'       => 'Share_Twitter',
-			'press-this'    => 'Share_PressThis',
-			'google-plus-1' => 'Share_GooglePlus1',
-			'tumblr'        => 'Share_Tumblr',
-			'pinterest'     => 'Share_Pinterest',
-			'pocket'        => 'Share_Pocket',
+			'print'             => 'Share_Print',
+			'facebook'          => 'Share_Facebook',
+			'linkedin'          => 'Share_LinkedIn',
+			'reddit'            => 'Share_Reddit',
+			'twitter'           => 'Share_Twitter',
+			'google-plus-1'     => 'Share_GooglePlus1',
+			'tumblr'            => 'Share_Tumblr',
+			'pinterest'         => 'Share_Pinterest',
+			'pocket'            => 'Share_Pocket',
+			'telegram'          => 'Share_Telegram',
+			'jetpack-whatsapp'  => 'Jetpack_Share_WhatsApp',
+			'skype'             => 'Share_Skype',
 		);
+
+		/**
+		 * Filters if Email Sharing is enabled.
+		 *
+		 * E-Mail sharing is often problematic due to spam concerns, so this filter enables it to be quickly and simply toggled.
+		 * @module sharedaddy
+		 *
+		 * @since 5.1.0
+		 *
+		 * @param bool $email Is e-mail sharing enabled? Default false if Akismet is not active or true if Akismet is active.
+		 */
+		if ( apply_filters( 'sharing_services_email', Jetpack::is_akismet_active() ) ) {
+			$services['email'] = 'Share_Email';
+		}
+
+		if ( is_multisite() && ( version_compare( $wp_version, '4.9-RC1-42107', '<' ) || is_plugin_active( 'press-this/press-this-plugin.php' ) ) ) {
+			$services['press-this'] = 'Share_PressThis';
+		}
 
 		if ( $include_custom ) {
 			// Add any custom services in
@@ -68,6 +87,8 @@ class Sharing_Service {
 
 		/**
 		 * Filters the list of available Sharing Services.
+		 *
+		 * @module sharedaddy
 		 *
 		 * @since 1.1.0
 		 *
@@ -136,6 +157,8 @@ class Sharing_Service {
 		/**
 		 * Control the state of the list of sharing services.
 		 *
+		 * @module sharedaddy
+		 *
 		 * @since 1.1.0
 		 *
 		 * @param array $args {
@@ -156,7 +179,7 @@ class Sharing_Service {
 			'currently_enabled' => $this->get_blog_services()
 		) );
 
-		update_option( 'sharing-services', array( 'visible' => $visible, 'hidden' => $hidden ) );
+		return update_option( 'sharing-services', array( 'visible' => $visible, 'hidden' => $hidden ) );
 	}
 
 	public function get_blog_services() {
@@ -164,8 +187,17 @@ class Sharing_Service {
 		$enabled  = get_option( 'sharing-services' );
 		$services = $this->get_all_services();
 
-		if ( !is_array( $options ) )
-			$options = array( 'global' => $this->get_global_options() );
+		/**
+		 * Check if options exist and are well formatted.
+		 * This avoids issues on sites with corrupted options.
+		 * @see https://github.com/Automattic/jetpack/issues/6121
+		 */
+		if ( ! is_array( $options ) || ! isset( $options['button_style'], $options['global'] ) ) {
+			$global_options = array( 'global' => $this->get_global_options() );
+			$options = is_array( $options )
+				? array_merge( $options, $global_options )
+				: $global_options;
+		}
 
 		$global = $options['global'];
 
@@ -179,6 +211,8 @@ class Sharing_Service {
 			/**
 			 * Filters the list of default Sharing Services.
 			 *
+			 * @module sharedaddy
+			 *
 			 * @since 1.1.0
 			 *
 			 * @param array $enabled Array of default Sharing Services.
@@ -187,8 +221,17 @@ class Sharing_Service {
 		}
 
 		// Cleanup after any filters that may have produced duplicate services
-		$enabled['visible'] = array_unique( $enabled['visible'] );
-		$enabled['hidden']  = array_unique( $enabled['hidden'] );
+		if ( is_array( $enabled['visible'] ) ) {
+			$enabled['visible'] = array_unique( $enabled['visible'] );
+		} else {
+			$enabled['visible'] = array();
+		}
+
+		if ( is_array( $enabled['hidden'] ) ) {
+			$enabled['hidden']  = array_unique( $enabled['hidden'] );
+		} else {
+			$enabled['hidden'] = array();
+		}
 
 		// Form the enabled services
 		$blog = array( 'visible' => array(), 'hidden' => array() );
@@ -196,13 +239,18 @@ class Sharing_Service {
 		foreach ( $blog AS $area => $stuff ) {
 			foreach ( (array)$enabled[$area] AS $service ) {
 				if ( isset( $services[$service] ) ) {
-					$blog[$area][$service] = new $services[$service]( $service, array_merge( $global, isset( $options[$service] ) ? $options[$service] : array() ) );
+					if ( ! isset( $options[ $service ] ) || ! is_array( $options[ $service ] ) ) {
+						$options[ $service ] = array();
+					}
+					$blog[ $area ][ $service ] = new $services[ $service ]( $service, array_merge( $global, $options[ $service ] ) );
 				}
 			}
 		}
 
 		/**
 		 * Filters the list of enabled Sharing Services.
+		 *
+		 * @module sharedaddy
 		 *
 		 * @since 1.1.0
 		 *
@@ -240,7 +288,7 @@ class Sharing_Service {
 
 		// Defaults
 		$options['global'] = array(
-			'button_style'  => 'icon',
+			'button_style'  => 'icon-text',
 			'sharing_label' => $this->default_sharing_label,
 			'open_links'    => 'same',
 			'show'          => array(),
@@ -249,6 +297,8 @@ class Sharing_Service {
 
 		/**
 		 * Filters global sharing settings.
+		 *
+		 * @module sharedaddy
 		 *
 		 * @since 1.1.0
 		 *
@@ -301,10 +351,11 @@ class Sharing_Service {
 		if ( $this->global === false ) {
 			$options = get_option( 'sharing-options' );
 
-			if ( is_array( $options ) && isset( $options['global'] ) )
+			if ( is_array( $options ) && isset( $options['global'] ) && is_array( $options['global'] ) ) {
 				$this->global = $options['global'];
-			else
+			} else {
 				$this->global = $this->set_global_options( $options['global'] );
+			}
 		}
 
 		if ( ! isset( $this->global['show'] ) ) {
@@ -341,6 +392,8 @@ class Sharing_Service {
 
 		/**
 		 * Get the state of a sharing button.
+		 *
+		 * @module sharedaddy
 		 *
 		 * @since 1.1.0
 		 *
@@ -411,12 +464,12 @@ class Sharing_Service {
 }
 
 class Sharing_Service_Total {
-	var $id 		= '';
-	var $name 		= '';
-	var $service	= '';
-	var $total 		= 0;
+	public $id 		= '';
+	public $name 		= '';
+	public $service	= '';
+	public $total 		= 0;
 
-	public function Sharing_Service_Total( $id, $total ) {
+	public function __construct( $id, $total ) {
 		$services 		= new Sharing_Service();
 		$this->id 		= esc_html( $id );
 		$this->service 	= $services->get_service( $id );
@@ -433,12 +486,12 @@ class Sharing_Service_Total {
 }
 
 class Sharing_Post_Total {
-	var $id		= 0;
-	var $total	= 0;
-	var $title 	= '';
-	var $url	= '';
+	public $id    = 0;
+	public $total = 0;
+	public $title = '';
+	public $url   = '';
 
-	public function Sharing_Post_Total( $id, $total ) {
+	public function __construct( $id, $total ) {
 		$this->id 		= (int) $id;
 		$this->total 	= (int) $total;
 		$this->title	= get_the_title( $this->id );
@@ -475,6 +528,8 @@ function sharing_maybe_enqueue_scripts() {
 	/**
 	 * Filter to decide when sharing scripts should be enqueued.
 	 *
+	 * @module sharedaddy
+	 *
 	 * @since 3.2.0
 	 *
 	 * @param bool $enqueue Decide if the sharing scripts should be enqueued.
@@ -486,16 +541,20 @@ function sharing_add_footer() {
 	global $jetpack_sharing_counts;
 
 	/**
-	 * Filter all Javascript output by the sharing module.
+	 * Filter all JavaScript output by the sharing module.
+	 *
+	 * @module sharedaddy
 	 *
 	 * @since 1.1.0
 	 *
-	 * @param bool true Control whether the sharing module should add any Javascript to the site. Default to true.
+	 * @param bool true Control whether the sharing module should add any JavaScript to the site. Default to true.
 	 */
 	if ( apply_filters( 'sharing_js', true ) && sharing_maybe_enqueue_scripts() ) {
 
 		/**
 		 * Filter the display of sharing counts next to the sharing buttons.
+		 *
+		 * @module sharedaddy
 		 *
 		 * @since 3.2.0
 		 *
@@ -504,16 +563,10 @@ function sharing_add_footer() {
 		if ( apply_filters( 'jetpack_sharing_counts', true ) && is_array( $jetpack_sharing_counts ) && count( $jetpack_sharing_counts ) ) :
 			$sharing_post_urls = array_filter( $jetpack_sharing_counts );
 			if ( $sharing_post_urls ) :
-				$is_jetpack = true === apply_filters( 'is_jetpack_site', false, get_current_blog_id() );
-				$site_id = $is_jetpack ? Jetpack_Options::get_option( 'id' ) : get_current_blog_id();
 ?>
 
 	<script type="text/javascript">
 		window.WPCOM_sharing_counts = <?php echo json_encode( array_flip( $sharing_post_urls ) ); ?>;
-		window.WPCOM_jetpack = <?php echo var_export( $is_jetpack, true ); ?>;
-		<?php if ( is_int( $site_id ) ): ?>
-		window.WPCOM_site_ID = <?php echo $site_id ?>;
-		<?php endif; ?>
 	</script>
 <?php
 			endif;
@@ -527,7 +580,6 @@ function sharing_add_footer() {
 		);
 		wp_localize_script( 'sharing-js', 'sharing_js_options', $sharing_js_options);
 	}
-
 	$sharer = new Sharing_Service();
 	$enabled = $sharer->get_blog_services();
 	foreach ( array_merge( $enabled['visible'], $enabled['hidden'] ) AS $service ) {
@@ -544,13 +596,8 @@ function sharing_add_header() {
 	}
 
 	if ( count( $enabled['all'] ) > 0 && sharing_maybe_enqueue_scripts() ) {
-		// @todo: Remove this opt-out filter in the future
-		if ( ( ! defined( 'IS_WPCOM' ) ) || ( ! IS_WPCOM ) || apply_filters( 'wpl_sharing_2014_1', true ) ) {
-			wp_enqueue_style( 'sharedaddy', plugin_dir_url( __FILE__ ) .'sharing.css', array(), JETPACK__VERSION );
-			wp_enqueue_style( 'genericons' );
-		} else {
-			wp_enqueue_style( 'sharedaddy', plugin_dir_url( __FILE__ ) .'sharing-legacy.css', array(), JETPACK__VERSION );
-		}
+		wp_enqueue_style( 'sharedaddy', plugin_dir_url( __FILE__ ) .'sharing.css', array(), JETPACK__VERSION );
+		wp_enqueue_style( 'social-logos' );
 	}
 
 }
@@ -574,10 +621,15 @@ add_action( 'template_redirect', 'sharing_process_requests', 9 );
 function sharing_display( $text = '', $echo = false ) {
 	global $post, $wp_current_filter;
 
+	require_once JETPACK__PLUGIN_DIR . '/sync/class.jetpack-sync-settings.php';
+	if ( Jetpack_Sync_Settings::is_syncing() ) {
+		return $text;
+	}
+
 	if ( empty( $post ) )
 		return $text;
 
-	if ( is_preview() || is_admin() ) {
+	if ( ( is_preview() || is_admin() ) && ! ( defined( 'DOING_AJAX' ) && DOING_AJAX ) ) {
 		return $text;
 	}
 
@@ -617,7 +669,7 @@ function sharing_display( $text = '', $echo = false ) {
 	if ( !is_feed() ) {
 		if ( is_singular() && in_array( get_post_type(), $global['show'] ) ) {
 			$show = true;
-		} elseif ( in_array( 'index', $global['show'] ) && ( is_home() || is_archive() || is_search() || in_array( get_post_type(), $global['show'] ) ) ) {
+		} elseif ( in_array( 'index', $global['show'] ) && ( is_home() || is_front_page() || is_archive() || is_search() || in_array( get_post_type(), $global['show'] ) ) ) {
 			$show = true;
 		}
 	}
@@ -625,9 +677,11 @@ function sharing_display( $text = '', $echo = false ) {
 	/**
 	 * Filter to decide if sharing buttons should be displayed.
 	 *
+	 * @module sharedaddy
+	 *
 	 * @since 1.1.0
 	 *
-	 * @param
+	 * @param bool $show Should the sharing buttons be displayed.
 	 * @param WP_Post $post The post to share.
 	 */
 	$show = apply_filters( 'sharing_show', $show, $post );
@@ -635,13 +689,14 @@ function sharing_display( $text = '', $echo = false ) {
 	// Disabled for this post?
 	$switched_status = get_post_meta( $post->ID, 'sharing_disabled', false );
 
-	if ( !empty( $switched_status ) )
+	if ( !empty( $switched_status ) ) {
 		$show = false;
+	}
 
 	// Private post?
 	$post_status = get_post_status( $post->ID );
 
-	if ( $post_status == 'private' ) {
+	if ( 'private' === $post_status ) {
 		$show = false;
 	}
 
@@ -650,10 +705,13 @@ function sharing_display( $text = '', $echo = false ) {
 		$show = true;
 
 	$sharing_content = '';
+	$enabled = false;
 
 	if ( $show ) {
 		/**
 		 * Filters the list of enabled Sharing Services.
+		 *
+		 * @module sharedaddy
 		 *
 		 * @since 2.2.3
 		 *
@@ -668,8 +726,23 @@ function sharing_display( $text = '', $echo = false ) {
 
 			// Wrapper
 			$sharing_content .= '<div class="sharedaddy sd-sharing-enabled"><div class="robots-nocontent sd-block sd-social sd-social-' . $global['button_style'] . ' sd-sharing">';
-			if ( $global['sharing_label'] != '' )
-				$sharing_content .= '<h3 class="sd-title">' . $global['sharing_label'] . '</h3>';
+			if ( $global['sharing_label'] != '' ) {
+				$sharing_content .= sprintf(
+					/**
+					 * Filter the sharing buttons' headline structure.
+					 *
+					 * @module sharedaddy
+					 *
+					 * @since 4.4.0
+					 *
+					 * @param string $sharing_headline Sharing headline structure.
+					 * @param string $global['sharing_label'] Sharing title.
+					 * @param string $sharing Module name.
+					 */
+					apply_filters( 'jetpack_sharing_headline_html', '<h3 class="sd-title">%s</h3>', $global['sharing_label'], 'sharing' ),
+					esc_html( $global['sharing_label'] )
+				);
+			}
 			$sharing_content .= '<div class="sd-content"><ul>';
 
 			// Visible items
@@ -733,15 +806,38 @@ function sharing_display( $text = '', $echo = false ) {
 			} else {
 				$ver = '20141212';
 			}
-			wp_register_script( 'sharing-js', plugin_dir_url( __FILE__ ).'sharing.js', array( 'jquery' ), $ver );
+			wp_register_script(
+				'sharing-js',
+				Jetpack::get_file_url_for_environment(
+					'_inc/build/sharedaddy/sharing.min.js',
+					'modules/sharedaddy/sharing.js'
+				),
+				array( 'jquery' ),
+				$ver
+			);
+
+			// Enqueue scripts for the footer
 			add_action( 'wp_footer', 'sharing_add_footer' );
 		}
 	}
 
+	/**
+	 * Filters the content markup of the Jetpack sharing links
+	 *
+	 * @module sharedaddy
+	 *
+	 * @since 3.8.0
+	 * @since 6.2.0 Started sending $enabled as a second parameter.
+	 *
+	 * @param string $sharing_content Content markup of the Jetpack sharing links
+	 * @param array  $enabled         Array of Sharing Services currently enabled.
+	 */
+	$sharing_markup = apply_filters( 'jetpack_sharing_display_markup', $sharing_content, $enabled );
+
 	if ( $echo )
-		echo $text.$sharing_content;
+		echo $text . $sharing_markup;
 	else
-		return $text.$sharing_content;
+		return $text . $sharing_markup;
 }
 
 add_filter( 'the_content', 'sharing_display', 19 );

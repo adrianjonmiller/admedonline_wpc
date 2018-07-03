@@ -18,6 +18,8 @@ function jetpack_theme_supports_social_links() {
 }
 add_action( 'init', 'jetpack_theme_supports_social_links', 30 );
 
+if ( ! class_exists( 'Social_Links' ) ) {
+
 class Social_Links {
 
 	/**
@@ -116,11 +118,11 @@ class Social_Links {
 	 */
 	public function customize_register( $wp_customize ) {
 		$wp_customize->add_section( 'jetpack_social_links', array(
-			'title'    => __( 'Connect', 'jetpack' ),
+			'title'    => esc_html__( 'Connect', 'jetpack' ),
 			'priority' => 35,
 		) );
 
-		foreach ( $this->services as $service ) {
+		foreach ( array_keys( $this->publicize->get_services( 'all' ) ) as $service ) {
 			$choices = $this->get_customize_select( $service );
 
 			if ( empty( $choices ) ) {
@@ -201,6 +203,10 @@ class Social_Links {
 			'' => __( '&mdash; Select &mdash;', 'jetpack' )
 		);
 
+		if ( isset( $this->links[ $service ] ) ) {
+			$choices[ $this->links[ $service ] ] = $this->links[ $service ];
+		}
+
 		$connected_services = $this->publicize->get_services( 'connected' );
 		if ( isset( $connected_services[ $service ] ) ) {
 			foreach ( $connected_services[ $service ] as $c ) {
@@ -224,8 +230,10 @@ class Social_Links {
 	/**
 	 * Back-compat function for versions prior to 4.0.
 	 */
-	private function is_customize_preview() { 
-		global $wp_customize; 
-		return is_a( $wp_customize, 'WP_Customize_Manager' ) && $wp_customize->is_preview(); 
-	} 
+	private function is_customize_preview() {
+		global $wp_customize;
+		return is_a( $wp_customize, 'WP_Customize_Manager' ) && $wp_customize->is_preview();
+	}
 }
+
+} // end if ( ! class_exists( 'Social_Links' )

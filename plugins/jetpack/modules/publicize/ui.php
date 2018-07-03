@@ -8,7 +8,7 @@ class Publicize_UI {
 	/**
 	* Contains an instance of class 'publicize' which loads Keyring, sets up services, etc.
 	*/
-	var $publicize;
+	public $publicize;
 
 	/**
 	* Hooks into WordPress to display the various pieces of UI and load our assets
@@ -17,6 +17,25 @@ class Publicize_UI {
 		global $publicize;
 
 		$this->publicize = $publicize = new Publicize;
+
+		add_action( 'init', array( $this, 'init' ) );
+	}
+
+	function init() {
+		// Show only to users with the capability required to manage their Publicize connections.
+		/**
+		 * Filter what user capability is required to use the publicize form on the edit post page. Useful if publish post capability has been removed from role.
+		 *
+		 * @module publicize
+		 *
+		 * @since 4.1.0
+		 *
+		 * @param string $capability User capability needed to use publicize
+		 */
+		$capability = apply_filters( 'jetpack_publicize_capability', 'publish_posts' );
+		if ( ! current_user_can( $capability ) ) {
+			return;
+		}
 
 		// assets (css, js)
 		add_action( 'load-settings_page_sharing', array( &$this, 'load_assets' ) );
@@ -42,9 +61,12 @@ class Publicize_UI {
 	function management_page() { ?>
 		<div class="wrap">
 			<div class="icon32" id="icon-options-general"><br /></div>
-			<h2><?php _e( 'Sharing Settings', 'jetpack' ); ?></h2>
+			<h1><?php _e( 'Sharing Settings', 'jetpack' ); ?></h1>
 
-				<?php do_action( 'pre_admin_screen_sharing' ) ?>
+				<?php
+				/** This action is documented in modules/sharedaddy/sharing.php */
+				do_action( 'pre_admin_screen_sharing' );
+				?>
 
 		</div> <?php
 	}
@@ -56,14 +78,17 @@ class Publicize_UI {
 	function load_assets() {
 		wp_enqueue_script(
 			'publicize',
-			plugins_url( 'assets/publicize.js', __FILE__ ),
+			Jetpack::get_file_url_for_environment(
+				'_inc/build/publicize/assets/publicize.min.js',
+				'modules/publicize/assets/publicize.js'
+			),
 			array( 'jquery', 'thickbox' ),
 			'20121019'
 		);
 		if( is_rtl() ) {
-			wp_enqueue_style( 'publicize', plugins_url( 'assets/rtl/publicize-rtl.css', __FILE__ ), array(), '20120925' );
+			wp_enqueue_style( 'publicize', plugins_url( 'assets/rtl/publicize-rtl.css', __FILE__ ), array(), '20180301' );
 		} else {
-			wp_enqueue_style( 'publicize', plugins_url( 'assets/publicize.css', __FILE__ ), array(), '20120925' );
+			wp_enqueue_style( 'publicize', plugins_url( 'assets/publicize.css', __FILE__ ), array(), '20180301' );
 		}
 
 
@@ -102,53 +127,55 @@ class Publicize_UI {
 		$_blog_id = get_current_blog_id();
 		?>
 
-  		<form action="" id="publicize-form">
-	  		<h3 id="publicize"><?php _e( 'Publicize', 'jetpack' ) ?></h3>
+		<form action="" id="publicize-form">
+			<h2 id="publicize"><?php _e( 'Publicize', 'jetpack' ) ?></h2>
 
-	  		<?php
-	  			if ( !empty( $_GET['action'] ) && 'deny' == $_GET['action'] )
-	  				$this->denied_notice();
-	  		?>
+			<?php
+				if ( ! empty( $_GET['action'] ) && 'deny' == $_GET['action'] ) {
+					$this->denied_notice();
+				}
+			?>
 
-	  		<p>
-	  			<?php esc_html_e( 'Connect your blog to popular social networking sites and automatically share new posts with your friends.', 'jetpack' ) ?>
-	  			<?php esc_html_e( 'You can make a connection for just yourself or for all users on your blog. Shared connections are marked with the (Shared) text.', 'jetpack' ); ?>
-	  		</p>
+			<p>
+				<?php esc_html_e( 'Connect your blog to popular social networking sites and automatically share new posts with your friends.', 'jetpack' ) ?>
+				<?php esc_html_e( 'You can make a connection for just yourself or for all users on your blog. Shared connections are marked with the (Shared) text.', 'jetpack' ); ?>
+			</p>
 
-  			<?php
-  			if ( $this->in_jetpack )
-  				$doc_link = "http://jetpack.me/support/publicize/";
-  			else
-  				$doc_link = "http://en.support.wordpress.com/publicize/";
-  			?>
+			<?php
+			if ( $this->in_jetpack ) {
+				$doc_link = "http://jetpack.com/support/publicize/";
+			} else {
+				$doc_link = "http://en.support.wordpress.com/publicize/";
+			}
+			?>
 
-	  		<p>&rarr; <a href="<?php echo esc_url( $doc_link ); ?>" target="_blank"><?php esc_html_e( 'More information on using Publicize.', 'jetpack' ); ?></a></p>
+			<p>&rarr; <a href="<?php echo esc_url( $doc_link ); ?>" target="_blank"><?php esc_html_e( 'More information on using Publicize.', 'jetpack' ); ?></a></p>
 
-	  		<div id="publicize-services-block">
-		  		<?php
-		  		$services = $this->publicize->get_services( 'all' );
-		  		$total_num_of_services = count ( $services );
-		  		$service_num = 0;?>
+			<div id="publicize-services-block">
+				<?php
+				$services = $this->publicize->get_services( 'all' );
+				$total_num_of_services = count ( $services );
+				$service_num = 0;?>
 
-		  		<div class='left'>
+				<div class='left'>
 
-		  		<?php
-		  		foreach ( $services as $name => $service ) :
-		  			$connect_url = $this->publicize->connect_url( $name );
-		  			if ( $service_num == ( round ( ( $total_num_of_services / 2 ), 0 ) ) )
-		  				echo "</div><div class='right'>";
-		  			$service_num++;
-		  			?>
-		  			<div class="publicize-service-entry" <?php if ( $service_num > 0 ): ?>class="connected"<?php endif; ?> >
-			  			<div id="<?php echo esc_attr( $name ); ?>" class="publicize-service-left">
-			  				<a href="<?php echo esc_url( $connect_url ); ?>" id="service-link-<?php echo esc_attr( $name ); ?>" target="_top"><?php echo $this->publicize->get_service_label( $name ); ?></a>
-			  			</div>
+				<?php
+				foreach ( $services as $name => $service ) :
+					$connect_url = $this->publicize->connect_url( $name );
+					if ( $service_num == ( round ( ( $total_num_of_services / 2 ), 0 ) ) )
+						echo "</div><div class='right'>";
+					$service_num++;
+					?>
+					<div class="publicize-service-entry" <?php if ( $service_num > 0 ): ?>class="connected"<?php endif; ?> >
+						<div id="<?php echo esc_attr( $name ); ?>" class="publicize-service-left">
+							<a href="<?php echo esc_url( $connect_url ); ?>" id="service-link-<?php echo esc_attr( $name ); ?>" target="_top"><?php echo $this->publicize->get_service_label( $name ); ?></a>
+						</div>
 
 
-			  			<div class="publicize-service-right">
-			  				<?php if ( $this->publicize->is_enabled( $name ) && $connections = $this->publicize->get_connections( $name ) ) : ?>
-			  					<ul>
-				  					<?php
+						<div class="publicize-service-right">
+							<?php if ( $this->publicize->is_enabled( $name ) && $connections = $this->publicize->get_connections( $name ) ) : ?>
+								<ul>
+									<?php
 									foreach( $connections as $c ) :
 										$id = $this->publicize->get_connection_id( $c );
 										$disconnect_url = $this->publicize->disconnect_url( $name, $id );
@@ -202,47 +229,39 @@ class Publicize_UI {
 
 										<?php
 									endforeach;
-				  					?>
-				  				</ul>
-				  			<?php endif; ?>
+									?>
+								</ul>
+							<?php endif; ?>
 
-
-
-				  			<?php
-				  				 $connections = $this->publicize->get_connections( $name );
-				  				if ( empty ( $connections ) ) { ?>
-									<a id="<?php echo esc_attr( $name ); ?>" class="publicize-add-connection button" href="<?php echo esc_url( $connect_url ); ?>" target="_top"><?php echo esc_html( __( 'Connect', 'jetpack' ) ); ?></a>
-			  					<?php } else { ?>
-									<a id="<?php echo esc_attr( $name ); ?>" class="publicize-add-connection button add-new" href="<?php echo esc_url( $connect_url ); ?>" target="_top"><?php echo esc_html( __( 'Add New', 'jetpack' ) ); ?></a>
-			  					<?php } ?>
 
 
 							<?php
-							$help = apply_filters( 'publicize_help_text_' . $name, false );
-							if ( $help ) {
-								echo ' <a href="javascript:void(0);" title="' . esc_attr( $help ) . '" class="publicize-info">?</a>';
-							}
-							?>
+								$connections = $this->publicize->get_connections( $name );
+								if ( empty ( $connections ) ) { ?>
+									<a id="<?php echo esc_attr( $name ); ?>" class="publicize-add-connection button" href="<?php echo esc_url( $connect_url ); ?>" target="_top"><?php echo esc_html( __( 'Connect', 'jetpack' ) ); ?></a>
+								<?php } else { ?>
+									<a id="<?php echo esc_attr( $name ); ?>" class="publicize-add-connection button add-new" href="<?php echo esc_url( $connect_url ); ?>" target="_top"><?php echo esc_html( __( 'Add New', 'jetpack' ) ); ?></a>
+			  					<?php } ?>
 			  			</div>
 			  		</div>
 				<?php endforeach; ?>
 				</div>
 				<script>
-  				(function($){
-  					$('.pub-disconnect-button').on('click', function(e){ if ( confirm( '<?php echo esc_js( __( 'Are you sure you want to stop Publicizing posts to this connection?', 'jetpack' ) ); ?>' ) ) {
+				(function($){
+					$('.pub-disconnect-button').on('click', function(e){ if ( confirm( '<?php echo esc_js( __( 'Are you sure you want to stop Publicizing posts to this connection?', 'jetpack' ) ); ?>' ) ) {
 								return true;
 							} else {
-  							e.preventDefault();
-  							return false;
-  						}
-  					})
-  				})(jQuery);
-  				</script>
-	  		</div>
+							e.preventDefault();
+							return false;
+						}
+					})
+				})(jQuery);
+				</script>
+			</div>
 
 			<?php wp_nonce_field( "wpas_posts_{$_blog_id}", "_wpas_posts_{$_blog_id}_nonce" ); ?>
 			<input type="hidden" id="wpas_ajax_blog_id" name="wpas_ajax_blog_id" value="<?php echo $_blog_id; ?>" />
-	  	</form><?php
+		</form><?php
 
 	}
 
@@ -288,7 +307,7 @@ class Publicize_UI {
 
 	/**
 	* CSS for styling the publicize message box and counter that displays on the post page.
-	* There is also some Javascript for length counting and some basic display effects.
+	* There is also some JavaScript for length counting and some basic display effects.
 	*/
 	function post_page_metabox_assets() {
 		global $post;
@@ -306,17 +325,17 @@ class Publicize_UI {
 <script type="text/javascript">
 jQuery( function($) {
 	var wpasTitleCounter    = $( '#wpas-title-counter' ),
-	    wpasTwitterCheckbox = $( '.wpas-submit-twitter' ).size(),
-	    wpasTitle = $('#wpas-title').keyup( function() {
+		wpasTwitterCheckbox = $( '.wpas-submit-twitter' ).length,
+		wpasTitle = $('#wpas-title').keyup( function() {
 		var length = wpasTitle.val().length;
 		wpasTitleCounter.text( length );
-		if ( wpasTwitterCheckbox && length > 140 ) {
+		if ( wpasTwitterCheckbox && length > 256 ) {
 			wpasTitleCounter.addClass( 'wpas-twitter-length-limit' );
 		} else {
 			wpasTitleCounter.removeClass( 'wpas-twitter-length-limit' );
 		}
-	    } ),
-	    authClick = false;
+		} ),
+		authClick = false;
 
 	$('#publicize-disconnected-form-show').click( function() {
 		$('#publicize-form').slideDown( 'fast' );
@@ -332,7 +351,7 @@ jQuery( function($) {
 		$('#publicize-form').slideDown( 'fast', function() {
 			wpasTitle.focus();
 			if ( !wpasTitle.text() ) {
-				var url = $('#shortlink').size() ? $('#shortlink').val() : '';
+				var url = $('#shortlink').length ? $('#shortlink').val() : '';
 
 				var defaultMessage = $.trim( '<?php printf( $default_prefix, 'url' ); printf( $default_message, '$("#title").val()', 'url' ); printf( $default_suffix, 'url' ); ?>' );
 
@@ -391,7 +410,7 @@ jQuery( function($) {
 
 	$( '.pub-service' ).click( function() {
 		var service = $(this).data( 'service' ),
-		    fakebox = '<input id="wpas-submit-' + service + '" type="hidden" value="1" name="wpas[submit][' + service + ']" />';
+			fakebox = '<input id="wpas-submit-' + service + '" type="hidden" value="1" name="wpas[submit][' + service + ']" />';
 		$( '#add-publicize-check' ).append( fakebox );
 	} );
 
@@ -487,6 +506,16 @@ jQuery( function($) {
 	list-style: square;
 	padding-left: 1em;
 }
+#publicize-title:before {
+	content: "\f237";
+	font: normal 20px/1 dashicons;
+	speak: none;
+	margin-left: -1px;
+	padding-right: 3px;
+	vertical-align: top;
+	-webkit-font-smoothing: antialiased;
+	color: #82878c;
+}
 .post-new-php .authorize-link, .post-php .authorize-link {
 	line-height: 1.5em;
 }
@@ -522,185 +551,234 @@ jQuery( function($) {
 
 		if ( ! is_array( $services ) )
 			$services = array();
-
-		$active = array(); ?>
-
+		?>
 		<div id="publicize" class="misc-pub-section misc-pub-section-last">
-			<?php
-			_e( 'Publicize:', 'jetpack' );
-
-			if ( 0 < count( $services ) ) :
-					ob_start();
-				?>
-
-				<div id="publicize-form" class="hide-if-js">
-					<ul>
-
-					<?php
-					// We can set an _all flag to indicate that this post is completely done as
-					// far as Publicize is concerned. Jetpack uses this approach. All published posts in Jetpack
-					// have Publicize disabled.
-					$all_done = get_post_meta( $post->ID, $this->publicize->POST_DONE . 'all', true ) || ( $this->in_jetpack && 'publish' == $post->post_status );
-
-					// We don't allow Publicizing to the same external id twice, to prevent spam
-					$service_id_done = (array) get_post_meta( $post->ID, $this->publicize->POST_SERVICE_DONE, true );
-
-					foreach ( $services as $name => $connections ) {
-						foreach ( $connections as $connection ) {
-							$connection_data = '';
-							if ( method_exists( $connection, 'get_meta' ) )
-								$connection_data = $connection->get_meta( 'connection_data' );
-							elseif ( ! empty( $connection['connection_data'] ) )
-								$connection_data = $connection['connection_data'];
-
-							if ( !$continue = apply_filters( 'wpas_submit_post?', true, $post->ID, $name, $connection_data ) )
-								continue;
-
-							if ( !empty( $connection->unique_id ) )
-								$unique_id = $connection->unique_id;
-							else if ( !empty( $connection['connection_data']['token_id'] ) )
-								$unique_id = $connection['connection_data']['token_id'];
-
-							// Should we be skipping this one?
-							$skip = (
-								(
-									in_array( $post->post_status, array( 'publish', 'draft', 'future' ) )
-									&&
-									get_post_meta( $post->ID, $this->publicize->POST_SKIP . $unique_id, true )
-								)
-								||
-								(
-									is_array( $connection )
-									&&
-									(
-										( isset( $connection['meta']['external_id'] ) && ! empty( $service_id_done[ $name ][ $connection['meta']['external_id'] ] ) )
-										||
-										// Jetpack's connection data looks a little different.
-										( isset( $connection['external_id'] ) && ! empty( $service_id_done[ $name ][ $connection['external_id'] ] ) )
-									)
-								)
-							);
-
-							// Was this connections (OR, old-format service) already Publicized to?
-							$done = ( 1 == get_post_meta( $post->ID, $this->publicize->POST_DONE . $unique_id, true ) ||  1 == get_post_meta( $post->ID, $this->publicize->POST_DONE . $name, true ) ); // New and old style flags
-
-							// If this one has already been publicized to, don't let it happen again
-							$disabled = '';
-							if ( $done )
-								$disabled = ' disabled="disabled"';
-
-							// If this is a global connection and this user doesn't have enough permissions to modify
-							// those connections, don't let them change it
-							$cmeta = $this->publicize->get_connection_meta( $connection );
-							$hidden_checkbox = false;
-							if ( !$done && ( 0 == $cmeta['connection_data']['user_id'] && !current_user_can( $this->publicize->GLOBAL_CAP ) ) ) {
-								$disabled = ' disabled="disabled"';
-								$hidden_checkbox = true;
-							}
-
-							// Determine the state of the checkbox (on/off) and allow filtering
-							$checked = $skip != 1 || $done;
-							$checked = apply_filters( 'publicize_checkbox_default', $checked, $post->ID, $name, $connection );
-
-							// Force the checkbox to be checked if the post was DONE, regardless of what the filter does
-							if ( $done )
-								$checked = true;
-
-							// This post has been handled, so disable everything
-							if ( $all_done )
-								$disabled = ' disabled="disabled"';
-
-							$label = sprintf(
-								_x( '%1$s: %2$s', 'Service: Account connected as', 'jetpack' ),
-								esc_html( $this->publicize->get_service_label( $name ) ),
-								esc_html( $this->publicize->get_display_name( $name, $connection ) )
-							);
-							if ( !$skip || $done ) {
-								$active[] = $label;
-							}
-							?>
-							<li>
-								<label for="wpas-submit-<?php echo esc_attr( $unique_id ); ?>">
-									<input type="checkbox" name="wpas[submit][<?php echo $unique_id; ?>]" id="wpas-submit-<?php echo $unique_id; ?>" class="wpas-submit-<?php echo $name; ?>" value="1" <?php
-										checked( true, $checked );
-										echo $disabled;
-									?> />
-									<?php
-									if ( $hidden_checkbox ) {
-										// Need to submit a value to force a global connection to post
-										echo '<input type="hidden" name="wpas[submit][' . $unique_id . ']" value="1" />';
-									}
-									echo esc_html( $label );
-									?>
-								</label>
-							</li>
-							<?php
-						}
-					}
-
-					if ( $title = get_post_meta( $post->ID, $this->publicize->POST_MESS, true ) )
-						$title = esc_html( $title );
-					else
-						$title = '';
- 					?>
-
-					</ul>
-
-					<label for="wpas-title"><?php _e( 'Custom Message:', 'jetpack' ); ?></label>
-					<span id="wpas-title-counter" class="alignright hide-if-no-js">0</span>
-
-					<textarea name="wpas_title" id="wpas-title"<?php disabled( $all_done ); ?>><?php echo $title; ?></textarea>
-
-					<a href="#" class="hide-if-no-js" id="publicize-form-hide"><?php _e( 'Hide', 'jetpack' ); ?></a>
-					<input type="hidden" name="wpas[0]" value="1" />
-
-				</div>
-				<div id="pub-connection-tests"></div>
-				<?php // #publicize-form
-
-				$publicize_form = ob_get_clean();
-			else :
-				echo "&nbsp;" . __( 'Not Connected', 'jetpack' );
-					ob_start();
-				?>
-
-				<div id="publicize-form" class="hide-if-js">
-					<div id="add-publicize-check" style="display: none;"></div>
-
-					<strong><?php _e( 'Connect to', 'jetpack' ); ?>:</strong>
-
-					<ul class="not-connected">
-						<?php foreach ( $available_services as $service_name => $service ) : ?>
-						<li>
-							<a class="pub-service" data-service="<?php echo esc_attr( $service_name ); ?>" title="<?php echo esc_attr( sprintf( __( 'Connect and share your posts on %s', 'jetpack' ), $this->publicize->get_service_label( $service_name ) ) ); ?>" target="_blank" href="<?php echo $this->publicize->connect_url( $service_name ); ?>">
-								<?php echo esc_html( $this->publicize->get_service_label( $service_name ) ); ?>
-							</a>
-						</li>
+			<span id="publicize-title">
+				<?php esc_html_e( 'Publicize:', 'jetpack' ); ?>
+				<?php if ( 0 < count( $services ) ) : ?>
+					<?php list( $publicize_form, $active ) = $this->get_metabox_form_connected( $services ); ?>
+					<span id="publicize-defaults">
+						<?php foreach ( $active as $item ) : ?>
+							<strong><?php echo esc_html( $item ); ?></strong>
 						<?php endforeach; ?>
-					</ul>
-
-					<?php if ( 0 < count( $services ) ) : ?>
-						<a href="#" class="hide-if-no-js" id="publicize-form-hide"><?php _e( 'Hide', 'jetpack' ); ?></a>
-					<?php else : ?>
-						<a href="#" class="hide-if-no-js" id="publicize-disconnected-form-hide"><?php _e( 'Hide', 'jetpack' ); ?></a>
-					<?php endif; ?>
-				</div> <?php // #publicize-form
-
-				$publicize_form = ob_get_clean();
-			endif;
+					</span>
+					<a href="#" id="publicize-form-edit"><?php esc_html_e( 'Edit', 'jetpack' ); ?></a>&nbsp;<a href="<?php echo esc_url( admin_url( 'options-general.php?page=sharing' ) ); ?>" target="_blank"><?php _e( 'Settings', 'jetpack' ); ?></a><br />
+				<?php else : ?>
+					<?php $publicize_form = $this->get_metabox_form_disconnected( $available_services ); ?>
+					<strong><?php echo __( 'Not Connected', 'jetpack' ); ?></strong>
+					<a href="#" id="publicize-disconnected-form-show"><?php esc_html_e( 'Edit', 'jetpack' ); ?></a><br />
+				<?php endif; ?>
+			</span>
+			<?php
+			/**
+			 * Filter the Publicize details form.
+			 *
+			 * @module publicize
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param string $publicize_form Publicize Details form appearing above Publish button in the editor.
+			 */
+			echo apply_filters( 'publicize_form', $publicize_form );
 			?>
-
-			<span id="publicize-defaults"><strong><?php echo join( '</strong>, <strong>', array_map( 'esc_html', $active ) ); ?></strong></span><br />
-
-			<?php if ( 0 < count( $services ) ) : ?>
-				<a href="#" id="publicize-form-edit"><?php _e( 'Edit Details', 'jetpack' ); ?></a>&nbsp;<a href="<?php echo admin_url( 'options-general.php?page=sharing' ); ?>" target="_blank"><?php _e( 'Settings', 'jetpack' ); ?></a><br />
-			<?php else : ?>
-				<a href="#" id="publicize-disconnected-form-show"><?php _e( 'Show', 'jetpack' ); ?></a><br />
-			<?php endif; ?>
-
-			<?php echo apply_filters( 'publicize_form', $publicize_form ); ?>
-
 		</div> <?php // #publicize
 	}
 
+	private function get_metabox_form_connected( $services ) {
+		global $post;
+		$active = array();
+		ob_start();
+		?> <div id="publicize-form" class="hide-if-js">
+			<ul>
+
+			<?php
+			// We can set an _all flag to indicate that this post is completely done as
+			// far as Publicize is concerned. Jetpack uses this approach. All published posts in Jetpack
+			// have Publicize disabled.
+			$all_done = get_post_meta( $post->ID, $this->publicize->POST_DONE . 'all', true ) || ( $this->in_jetpack && 'publish' == $post->post_status );
+
+			// We don't allow Publicizing to the same external id twice, to prevent spam
+			$service_id_done = (array) get_post_meta( $post->ID, $this->publicize->POST_SERVICE_DONE, true );
+
+			foreach ( $services as $name => $connections ) {
+				foreach ( $connections as $connection ) {
+					$connection_data = '';
+					if ( method_exists( $connection, 'get_meta' ) )
+						$connection_data = $connection->get_meta( 'connection_data' );
+					elseif ( ! empty( $connection['connection_data'] ) )
+						$connection_data = $connection['connection_data'];
+
+					/**
+					 * Filter whether a post should be publicized to a given service.
+					 *
+					 * @module publicize
+					 *
+					 * @since 2.0.0
+					 *
+					 * @param bool true Should the post be publicized to a given service? Default to true.
+					 * @param int $post->ID Post ID.
+					 * @param string $name Service name.
+					 * @param array $connection_data Array of information about all Publicize details for the site.
+					 */
+					if ( ! $continue = apply_filters( 'wpas_submit_post?', true, $post->ID, $name, $connection_data ) ) {
+						continue;
+					}
+
+					if ( ! empty( $connection->unique_id ) ) {
+						$unique_id = $connection->unique_id;
+					} else if ( ! empty( $connection['connection_data']['token_id'] ) ) {
+						$unique_id = $connection['connection_data']['token_id'];
+					}
+
+					// Should we be skipping this one?
+					$skip = (
+						(
+							in_array( $post->post_status, array( 'publish', 'draft', 'future' ) )
+							&&
+							get_post_meta( $post->ID, $this->publicize->POST_SKIP . $unique_id, true )
+						)
+						||
+						(
+							is_array( $connection )
+							&&
+							(
+								( isset( $connection['meta']['external_id'] ) && ! empty( $service_id_done[ $name ][ $connection['meta']['external_id'] ] ) )
+								||
+								// Jetpack's connection data looks a little different.
+								( isset( $connection['external_id'] ) && ! empty( $service_id_done[ $name ][ $connection['external_id'] ] ) )
+							)
+						)
+					);
+
+					// Was this connections (OR, old-format service) already Publicized to?
+					$done = ( 1 == get_post_meta( $post->ID, $this->publicize->POST_DONE . $unique_id, true ) ||  1 == get_post_meta( $post->ID, $this->publicize->POST_DONE . $name, true ) ); // New and old style flags
+
+					// If this one has already been publicized to, don't let it happen again
+					$disabled = '';
+					if ( $done ) {
+						$disabled = ' disabled="disabled"';
+					}
+
+					// If this is a global connection and this user doesn't have enough permissions to modify
+					// those connections, don't let them change it
+					$cmeta = $this->publicize->get_connection_meta( $connection );
+					$hidden_checkbox = false;
+					if ( !$done && ( 0 == $cmeta['connection_data']['user_id'] && !current_user_can( $this->publicize->GLOBAL_CAP ) ) ) {
+						$disabled = ' disabled="disabled"';
+						/**
+						 * Filters the checkboxes for global connections with non-prilvedged users.
+						 *
+						 * @module publicize
+						 *
+						 * @since 3.7.0
+						 *
+						 * @param bool   $checked Indicates if this connection should be enabled. Default true.
+						 * @param int    $post->ID ID of the current post
+						 * @param string $name Name of the connection (Facebook, Twitter, etc)
+						 * @param array  $connection Array of data about the connection.
+						 */
+						$hidden_checkbox = apply_filters( 'publicize_checkbox_global_default', true, $post->ID, $name, $connection );
+					}
+
+					// Determine the state of the checkbox (on/off) and allow filtering
+					$checked = $skip != 1 || $done;
+					/**
+					 * Filter the checkbox state of each Publicize connection appearing in the post editor.
+					 *
+					 * @module publicize
+					 *
+					 * @since 2.0.1
+					 *
+					 * @param bool $checked Should the Publicize checkbox be enabled for a given service.
+					 * @param int $post->ID Post ID.
+					 * @param string $name Service name.
+					 * @param array $connection Array of connection details.
+					 */
+					$checked = apply_filters( 'publicize_checkbox_default', $checked, $post->ID, $name, $connection );
+
+					// Force the checkbox to be checked if the post was DONE, regardless of what the filter does
+					if ( $done ) {
+						$checked = true;
+					}
+
+					// This post has been handled, so disable everything
+					if ( $all_done ) {
+						$disabled = ' disabled="disabled"';
+					}
+
+					$label = sprintf(
+						_x( '%1$s: %2$s', 'Service: Account connected as', 'jetpack' ),
+						esc_html( $this->publicize->get_service_label( $name ) ),
+						esc_html( $this->publicize->get_display_name( $name, $connection ) )
+					);
+					if ( !$skip || $done ) {
+						$active[] = $label;
+					}
+					?>
+					<li>
+						<label for="wpas-submit-<?php echo esc_attr( $unique_id ); ?>">
+							<input type="checkbox" name="wpas[submit][<?php echo $unique_id; ?>]" id="wpas-submit-<?php echo $unique_id; ?>" class="wpas-submit-<?php echo $name; ?>" value="1" <?php
+								checked( true, $checked );
+								echo $disabled;
+							?> />
+							<?php
+							if ( $hidden_checkbox ) {
+								// Need to submit a value to force a global connection to post
+								echo '<input type="hidden" name="wpas[submit][' . $unique_id . ']" value="1" />';
+							}
+							echo esc_html( $label );
+							?>
+						</label>
+					</li>
+					<?php
+				}
+			}
+
+			if ( $title = get_post_meta( $post->ID, $this->publicize->POST_MESS, true ) ) {
+				$title = esc_html( $title );
+			} else {
+				$title = '';
+			}
+			?>
+
+			</ul>
+
+			<label for="wpas-title"><?php _e( 'Custom Message:', 'jetpack' ); ?></label>
+			<span id="wpas-title-counter" class="alignright hide-if-no-js">0</span>
+
+			<textarea name="wpas_title" id="wpas-title"<?php disabled( $all_done ); ?>><?php echo $title; ?></textarea>
+
+			<a href="#" class="hide-if-no-js button" id="publicize-form-hide"><?php esc_html_e( 'OK', 'jetpack' ); ?></a>
+			<input type="hidden" name="wpas[0]" value="1" />
+
+		</div>
+		<?php if ( ! $all_done ) : ?>
+			<div id="pub-connection-tests"></div>
+		<?php endif; ?>
+		<?php // #publicize-form
+
+		return array( ob_get_clean(), $active );
+	}
+
+
+	private function get_metabox_form_disconnected( $available_services ) {
+		ob_start();
+		?><div id="publicize-form" class="hide-if-js">
+			<div id="add-publicize-check" style="display: none;"></div>
+
+			<?php _e( 'Connect to', 'jetpack' ); ?>:
+
+			<ul class="not-connected">
+				<?php foreach ( $available_services as $service_name => $service ) : ?>
+				<li>
+					<a class="pub-service" data-service="<?php echo esc_attr( $service_name ); ?>" title="<?php echo esc_attr( sprintf( __( 'Connect and share your posts on %s', 'jetpack' ), $this->publicize->get_service_label( $service_name ) ) ); ?>" target="_blank" href="<?php echo esc_url( $this->publicize->connect_url( $service_name ) ); ?>">
+						<?php echo esc_html( $this->publicize->get_service_label( $service_name ) ); ?>
+					</a>
+				</li>
+				<?php endforeach; ?>
+			</ul>
+			<a href="#" class="hide-if-no-js button" id="publicize-disconnected-form-hide"><?php esc_html_e( 'OK', 'jetpack' ); ?></a>
+		</div><?php // #publicize-form
+		return ob_get_clean();
+	}
 }

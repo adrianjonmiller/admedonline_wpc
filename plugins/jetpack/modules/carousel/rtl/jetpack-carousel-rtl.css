@@ -1,4 +1,4 @@
-/* This file was automatically generated on Oct 06 2014 18:02:19 */
+/* This file was automatically generated on Jul 30 2015 22:37:09 */
 
 .jp-carousel-wrap * {
 	line-height:inherit; /* prevent declarations of line-height in the universal selector */
@@ -22,6 +22,21 @@ div.jp-carousel-fadeaway {
 .jp-carousel-previous-button span {
 	background: url(.././images/arrows.png) no-repeat center center;
 	background-size: 200px 126px;
+}
+
+.jp-carousel-msg {
+	font-family: "Open Sans", sans-serif;
+	font-style: normal;
+	display: inline-block;
+	line-height: 19px;
+	padding: 11px 15px;
+	font-size: 14px;
+	text-align: center;
+	margin: 25px 2px 0 20px;
+	background-color: #fff;
+	border-right: 4px solid #ffba00;
+	-webkit-box-shadow: 0 0 1px 1px rgba(0,0,0,0.1);
+	box-shadow: 0 0 1px 1px rgba(0,0,0,0.1);
 }
 
 @media
@@ -268,7 +283,6 @@ div.jp-carousel-buttons a:hover {
 	border-color: #fff;
 }
 
-div.jp-carousel-buttons a.jp-carousel-like,
 div.jp-carousel-buttons a.jp-carousel-reblog,
 div.jp-carousel-buttons a.jp-carousel-commentlink,
 a.jp-carousel-image-download {
@@ -281,17 +295,15 @@ div.jp-carousel-buttons a.jp-carousel-commentlink {
 	margin: 0 0 0 14px !important;
 }
 
-div.jp-carousel-buttons a.jp-carousel-reblog.reblogged,
-div.jp-carousel-buttons a.jp-carousel-like.liked {
+div.jp-carousel-buttons a.jp-carousel-reblog.reblogged {
 	background-color: #303030;
-	padding-right: auto;
 	padding-left: 8px !important;
 	border-radius: 2px;
 	border-radius: 2px;
-	-webkit-border-radius: 2px;
-	-moz-border-radius: 2px;
-	-ms-border-radius: 2px;
-	-o-border-radius: 2px;
+	-webkit-border-radius:2px;
+	-moz-border-radius:2px;
+	-ms-border-radius:2px;
+	-o-border-radius:2px;
 }
 
 div.jp-carousel-buttons a.jp-carousel-reblog.reblogged {
@@ -300,13 +312,14 @@ div.jp-carousel-buttons a.jp-carousel-reblog.reblogged {
 
 div.jp-carousel-buttons a.jp-carousel-reblog,
 div.jp-carousel-buttons a.jp-carousel-reblog.reblogged:hover {
-	background-position: 98% -36px;
+	background-position: 6px -36px;
+	padding-left: auto !important;
 	padding-right: 26px !important;
 	color: #999;
 }
 
 div.jp-carousel-buttons a.jp-carousel-commentlink {
-	background-position: 100% -156px;
+	background-position: 0px -156px;
 	padding-right: 19px !important;
 }
 
@@ -315,17 +328,8 @@ div.jp-carousel-buttons a.jp-carousel-reblog.reblogged:hover {
 }
 
 div.jp-carousel-buttons a.jp-carousel-reblog:hover {
-	background-position: 98% -56px;
+	background-position: 6px -56px;
 	color: #68c9e8;
-}
-
-div.jp-carousel-buttons a.jp-carousel-like {
-	background-position: 5px 5px;
-	padding-right: 24px !important;
-}
-
-div.jp-carousel-buttons a.jp-carousel-like:hover {
-	background-position: 5px -15px;
 }
 
 @media
@@ -333,7 +337,6 @@ only screen and (-webkit-min-device-pixel-ratio: 1.5),
 only screen and (-o-min-device-pixel-ratio: 3/2),
 only screen and (min--moz-device-pixel-ratio: 1.5),
 only screen and (min-device-pixel-ratio: 1.5) {
-	div.jp-carousel-buttons a.jp-carousel-like,
 	div.jp-carousel-buttons a.jp-carousel-reblog,
 	div.jp-carousel-buttons a.jp-carousel-commentlink,
 	a.jp-carousel-image-download {
@@ -574,7 +577,7 @@ a.jp-carousel-image-download {
 	font-weight: 400;
 	font-size: 13px;
 	text-decoration: none;
-	background-position: 100% -82px;
+	background-position: 0 -82px;
 }
 
 a.jp-carousel-image-download span.photo-size {
@@ -589,7 +592,7 @@ a.jp-carousel-image-download span.photo-size-times {
 }
 
 a.jp-carousel-image-download:hover {
-	background-position: 100% -122px;
+	background-position: 0 -122px;
 	color: #68c9e8;
 	border: none !important;
 }
@@ -925,28 +928,17 @@ textarea#jp-carousel-comment-form-comment-field:focus::-webkit-input-placeholder
 	padding-right: 24px !important;
 }
 
-.jp-carousel-light div.jp-carousel-buttons a.jp-carousel-reblog.reblogged,
-.jp-carousel-light div.jp-carousel-buttons a.jp-carousel-like.liked {
+.jp-carousel-light div.jp-carousel-buttons a.jp-carousel-reblog.reblogged {
 	background-color: #2ea2cc;
 	color: #fff;
 }
 
 .jp-carousel-light div.jp-carousel-buttons a.jp-carousel-commentlink {
-	background-position: 100% -176px;
-}
-
-.jp-carousel-light div.jp-carousel-buttons a.jp-carousel-like,
-.jp-carousel-light div.jp-carousel-buttons a.jp-carousel-like:hover {
-	background-position: 5px -15px;
-	padding-right: 23px !important;
+	background-position: 0px -176px;
 }
 
 .jp-carousel-light div.jp-carousel-buttons a.jp-carousel-reblog.reblogged {
-	background-position: 96% -36px;
-}
-
-.jp-carousel-light div.jp-carousel-buttons a.jp-carousel-like.liked {
-	background-position: 5px 5px;
+	background-position: 5px -36px;
 }
 
 .jp-carousel-light div#carousel-reblog-box {
@@ -1022,11 +1014,11 @@ textarea#jp-carousel-comment-form-comment-field:focus::-webkit-input-placeholder
 }
 
 .jp-carousel-light a.jp-carousel-image-download {
-	background-position: 100% -122px;
+	background-position: 0 -122px;
 }
 
 .jp-carousel-light a.jp-carousel-image-download:hover {
-	background-position: 100% -122px;
+	background-position: 0 -122px;
 	color: #f1831e;
 }
 

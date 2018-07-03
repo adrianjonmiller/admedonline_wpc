@@ -3,7 +3,7 @@
 /*
 Plugin Name: Gallery
 Description: Gallery widget
-Author: Automattic, Inc.
+Author: Automattic Inc.
 Version: 1.0
 Author URI: http://automattic.com
 */
@@ -17,18 +17,41 @@ class Jetpack_Gallery_Widget extends WP_Widget {
 	public function __construct() {
 		$widget_ops 	= array(
 			'classname'   => 'widget-gallery',
-			'description' => __( 'Display a photo gallery or slideshow', 'jetpack' )
+			'description' => __( 'Display a photo gallery or slideshow', 'jetpack' ),
+			'customize_selective_refresh' => true,
 		);
-		$control_ops 	= array( 'width' => 250 );
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 
-		$this->WP_Widget( 'gallery', apply_filters( 'jetpack_widget_name', __( 'Gallery', 'jetpack' ) ), $widget_ops, $control_ops );
+		parent::__construct(
+			'gallery',
+			/** This filter is documented in modules/widgets/facebook-likebox.php */
+			apply_filters( 'jetpack_widget_name', __( 'Gallery', 'jetpack' ) ),
+			$widget_ops
+		);
+
+		if ( is_customize_preview() ) {
+			add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_scripts' ) );
+
+			if ( class_exists( 'Jetpack_Tiled_Gallery' ) ) {
+				add_action( 'wp_enqueue_scripts', array( 'Jetpack_Tiled_Gallery', 'default_scripts_and_styles' ) );
+			}
+
+			if ( class_exists( 'Jetpack_Slideshow_Shortcode' ) ) {
+				$slideshow = new Jetpack_Slideshow_Shortcode();
+				add_action( 'wp_enqueue_scripts', array( $slideshow, 'enqueue_scripts' ) );
+			}
+
+			if ( class_exists( 'Jetpack_Carousel' ) ) {
+				$carousel = new Jetpack_Carousel();
+				add_action( 'wp_enqueue_scripts', array( $carousel, 'enqueue_assets' ) );
+			}
+		}
 	}
 
 	/**
 	 * @param array $args Display arguments including before_title, after_title, before_widget, and after_widget.
-	 * @param array $instance The settings for the particular instance of the widget
+	 * @param array $instance The settings for the particular instance of the widget.
 	 */
 	public function widget( $args, $instance ) {
 		$instance = wp_parse_args( (array) $instance, $this->defaults() );
@@ -69,6 +92,7 @@ class Jetpack_Gallery_Widget extends WP_Widget {
 
 		echo $before_widget . "\n";
 
+		/** This filter is documented in core/src/wp-includes/default-widgets.php */
 		$title = apply_filters( 'widget_title', $instance['title'] );
 
 		if ( $title )
@@ -78,7 +102,17 @@ class Jetpack_Gallery_Widget extends WP_Widget {
 
 		$method = $instance['type'] . '_widget';
 
-		// Allow the width of a gallery to be altered by themes or other code
+		/**
+		 * Allow the width of a gallery to be altered by themes or other code.
+		 *
+		 * @module widgets
+		 *
+		 * @since 2.5.0
+		 *
+		 * @param int self::DEFAULT_WIDTH Default gallery width. Default is 265.
+		 * @param string $args Display arguments including before_title, after_title, before_widget, and after_widget.
+		 * @param array $instance The settings for the particular instance of the widget.
+		 */
 		$this->_instance_width = apply_filters( 'gallery_widget_content_width', self::DEFAULT_WIDTH, $args, $instance );
 
 		// Register a filter to modify the tiled_gallery_content_width, so Jetpack_Tiled_Gallery
@@ -97,6 +131,9 @@ class Jetpack_Gallery_Widget extends WP_Widget {
 		echo "\n" . '</div>'; // .widget-gallery-$type
 
 		echo "\n" . $after_widget;
+
+		/** This action is documented in modules/widgets/gravatar-profile.php */
+		do_action( 'jetpack_stats_extra', 'widget_view', 'gallery' );
 	}
 
 	/**
@@ -141,8 +178,7 @@ class Jetpack_Gallery_Widget extends WP_Widget {
 			return;
 		}
 
-		$widget_tiled_gallery = new Jetpack_Tiled_Gallery();
-		$widget_tiled_gallery->default_scripts_and_styles();
+		Jetpack_Tiled_Gallery::default_scripts_and_styles();
 
 		$layout = new Jetpack_Tiled_Gallery_Layout_Rectangular( $instance['attachments'], $instance['link'], false, 3 );
 		return $layout->HTML();
@@ -161,8 +197,7 @@ class Jetpack_Gallery_Widget extends WP_Widget {
 			return;
 		}
 
-		$widget_tiled_gallery = new Jetpack_Tiled_Gallery();
-		$widget_tiled_gallery->default_scripts_and_styles();
+		Jetpack_Tiled_Gallery::default_scripts_and_styles();
 
 		$layout = new Jetpack_Tiled_Gallery_Layout_Square( $instance['attachments'], $instance['link'], false, 3 );
 		return $layout->HTML();
@@ -181,8 +216,7 @@ class Jetpack_Gallery_Widget extends WP_Widget {
 			return;
 		}
 
-		$widget_tiled_gallery = new Jetpack_Tiled_Gallery();
-		$widget_tiled_gallery->default_scripts_and_styles();
+		Jetpack_Tiled_Gallery::default_scripts_and_styles();
 
 		$layout = new Jetpack_Tiled_Gallery_Layout_Circle( $instance['attachments'], $instance['link'], false, 3 );
 		return $layout->HTML();
@@ -216,7 +250,7 @@ class Jetpack_Gallery_Widget extends WP_Widget {
 
 		foreach ( $instance['attachments'] as $attachment ) {
 			$attachment_image_src = wp_get_attachment_image_src( $attachment->ID, 'full' );
-			$attachment_image_src = $attachment_image_src[0]; // [url, width, height]
+			$attachment_image_src = jetpack_photon_url( $attachment_image_src[0], array( 'w' => $this->_instance_width ) ); // [url, width, height]
 
 			$caption 	= wptexturize( strip_tags( $attachment->post_excerpt ) );
 
@@ -234,6 +268,7 @@ class Jetpack_Gallery_Widget extends WP_Widget {
 			$max_width = min( intval( $content_width ), $max_width );
 
 		$color = Jetpack_Options::get_option( 'slideshow_background_color', 'black' );
+		$autostart = isset( $attr['autostart'] ) ? $attr['autostart'] : true;
 
 		$js_attr = array(
 			'gallery'  => $gallery,
@@ -242,6 +277,7 @@ class Jetpack_Gallery_Widget extends WP_Widget {
 			'height'   => $max_height,
 			'trans'    => 'fade',
 			'color'    => $color,
+			'autostart' => $autostart,
 		 );
 
 		$html = $slideshow->slideshow_js( $js_attr );
@@ -354,7 +390,13 @@ class Jetpack_Gallery_Widget extends WP_Widget {
 	}
 
 	public function enqueue_frontend_scripts() {
-		wp_register_script( 'gallery-widget', plugins_url( '/gallery/js/gallery.js', __FILE__ ) );
+		wp_register_script(
+			'gallery-widget',
+			Jetpack::get_file_url_for_environment(
+				'_inc/build/widgets/gallery/js/gallery.min.js',
+				'modules/widgets/gallery/js/gallery.js'
+			)
+		);
 
 		wp_enqueue_script( 'gallery-widget' );
 	}
@@ -365,21 +407,26 @@ class Jetpack_Gallery_Widget extends WP_Widget {
 		if ( 'widgets.php' == $pagenow || 'customize.php' == $pagenow ) {
 			wp_enqueue_media();
 
-			wp_enqueue_script( 'gallery-widget-admin', plugins_url( '/gallery/js/admin.js', __FILE__ ), array(
-				'media-models',
-				'media-views'
-			) );
+			wp_enqueue_script(
+				'gallery-widget-admin',
+				Jetpack::get_file_url_for_environment(
+					'_inc/build/widgets/gallery/js/admin.min.js',
+					'modules/widgets/gallery/js/admin.js'
+				),
+				array(
+					'media-models',
+					'media-views'
+				),
+				'20150501'
+			);
 
 			$js_settings = array(
 				'thumbSize' => self::THUMB_SIZE
 			);
 
 			wp_localize_script( 'gallery-widget-admin', '_wpGalleryWidgetAdminSettings', $js_settings );
-			if( is_rtl() ) {
-				wp_enqueue_style( 'gallery-widget-admin', plugins_url( '/gallery/css/rtl/admin-rtl.css', __FILE__ ) );
-			} else {
-				wp_enqueue_style( 'gallery-widget-admin', plugins_url( '/gallery/css/admin.css', __FILE__ ) );
-			}
+			wp_enqueue_style( 'gallery-widget-admin', plugins_url( '/gallery/css/admin.css', __FILE__ ) );
+			wp_style_add_data( 'gallery-widget-admin', 'rtl', 'replace' );
 		}
 	}
 }
@@ -387,6 +434,22 @@ class Jetpack_Gallery_Widget extends WP_Widget {
 add_action( 'widgets_init', 'jetpack_gallery_widget_init' );
 
 function jetpack_gallery_widget_init() {
+	/**
+	 * Allow the Gallery Widget to be enabled even when Core supports the Media Gallery Widget
+	 *
+	 * @module widgets
+	 *
+	 * @since 5.5.0
+	 *
+	 * @param bool false Whether to force-enable the gallery widget
+	 */
+	if (
+		! apply_filters( 'jetpack_force_enable_gallery_widget', false )
+		&& class_exists( 'WP_Widget_Media_Gallery' )
+		&& Jetpack_Options::get_option( 'gallery_widget_migration' )
+	) {
+		return;
+ 	}
 	if ( ! method_exists( 'Jetpack', 'is_module_active' ) || Jetpack::is_module_active( 'tiled-gallery' ) )
 		register_widget( 'Jetpack_Gallery_Widget' );
 }

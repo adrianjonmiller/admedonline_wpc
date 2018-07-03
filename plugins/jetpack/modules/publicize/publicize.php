@@ -6,67 +6,108 @@ abstract class Publicize_Base {
 	* Services that are currently connected to the given user
 	* through publicize.
 	*/
-	var $connected_services = array();
+	public $connected_services = array();
 
 	/**
-	* Sservices that are supported by publicize. They don't
-	* neccessarly need to be connected to the current user.
+	* Services that are supported by publicize. They don't
+	* necessarily need to be connected to the current user.
 	*/
-	var $services;
+	public $services;
 
 	/**
 	* key names for post meta
 	*/
-	var $ADMIN_PAGE        = 'wpas';
-	var $POST_MESS         = '_wpas_mess';
-	var $POST_SKIP         = '_wpas_skip_'; // connection id appended to indicate that a connection should NOT be publicized to
-	var $POST_DONE         = '_wpas_done_'; // connection id appended to indicate a connection has already been publicized to
-	var $USER_AUTH         = 'wpas_authorize';
-	var $USER_OPT          = 'wpas_';
-	var $PENDING           = '_publicize_pending'; // ready for Publicize to do its thing
-	var $POST_SERVICE_DONE = '_publicize_done_external'; // array of external ids where we've Publicized
+	public $ADMIN_PAGE        = 'wpas';
+	public $POST_MESS         = '_wpas_mess';
+	public $POST_SKIP         = '_wpas_skip_'; // connection id appended to indicate that a connection should NOT be publicized to
+	public $POST_DONE         = '_wpas_done_'; // connection id appended to indicate a connection has already been publicized to
+	public $USER_AUTH         = 'wpas_authorize';
+	public $USER_OPT          = 'wpas_';
+	public $PENDING           = '_publicize_pending'; // ready for Publicize to do its thing
+	public $POST_SERVICE_DONE = '_publicize_done_external'; // array of external ids where we've Publicized
 
 	/**
 	* default pieces of the message used in constructing the
 	* content pushed out to other social networks
 	*/
-	var $default_prefix  = '';
-	var $default_message = '%title%';
-	var $default_suffix  = ' %url%';
+
+	public $default_prefix  = '';
+	public $default_message = '%title%';
+	public $default_suffix  = ' ';
 
 	/**
 	 * What WP capability is require to create/delete global connections?
-	 * All users with this cap can unglobalize all other global connections, and globalize any of their own
+	 * All users with this cap can un-globalize all other global connections, and globalize any of their own
 	 * Globalized connections cannot be unselected by users without this capability when publishing
 	 */
-	var $GLOBAL_CAP = 'edit_others_posts';
+	public $GLOBAL_CAP = 'edit_others_posts';
 
 	/**
 	* Sets up the basics of Publicize
 	*/
 	function __construct() {
-		$this->default_message = Publicize_Util::build_sprintf( array(
+		$this->default_message = self::build_sprintf( array(
+			/**
+			 * Filter the default Publicize message.
+			 *
+			 * @module publicize
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param string $this->default_message Publicize's default message. Default is the post title.
+			 */
 			apply_filters( 'wpas_default_message', $this->default_message ),
 			'title',
 			'url',
 		) );
 
-		$this->default_prefix = Publicize_Util::build_sprintf( array(
+		$this->default_prefix = self::build_sprintf( array(
+			/**
+			 * Filter the message prepended to the Publicize custom message.
+			 *
+			 * @module publicize
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param string $this->default_prefix String prepended to the Publicize custom message.
+			 */
 			apply_filters( 'wpas_default_prefix', $this->default_prefix ),
 			'url',
 		) );
 
-		$this->default_suffix = Publicize_Util::build_sprintf( array(
+		$this->default_suffix = self::build_sprintf( array(
+			/**
+			 * Filter the message appended to the Publicize custom message.
+			 *
+			 * @module publicize
+			 *
+			 * @since 2.0.0
+			 *
+			 * @param string $this->default_suffix String appended to the Publicize custom message.
+			 */
 			apply_filters( 'wpas_default_suffix', $this->default_suffix ),
 			'url',
 		) );
 
+		/**
+		 * Filter the capability to change global Publicize connection options.
+		 *
+		 * All users with this cap can un-globalize all other global connections, and globalize any of their own
+		 * Globalized connections cannot be unselected by users without this capability when publishing.
+		 *
+		 * @module publicize
+		 *
+		 * @since 2.2.1
+		 *
+		 * @param string $this->GLOBAL_CAP default capability in control of global Publicize connection options. Default to edit_others_posts.
+		 */
 		$this->GLOBAL_CAP = apply_filters( 'jetpack_publicize_global_connections_cap', $this->GLOBAL_CAP );
 
 		// stage 1 and 2 of 3-stage Publicize. Flag for Publicize on creation, save meta,
-		// then check meta and publicze based on that. stage 3 implemented on wpcom
+		// then check meta and publicize based on that. stage 3 implemented on wpcom
 		add_action( 'transition_post_status', array( $this, 'flag_post_for_publicize' ), 10, 3 );
 		add_action( 'save_post', array( &$this, 'save_meta' ), 20, 2 );
+		add_filter( 'post_updated_messages', array( $this, 'update_published_message' ), 20, 1 );
 
 		// Connection test callback
 		add_action( 'wp_ajax_test_publicize_conns', array( $this, 'test_publicize_conns' ) );
@@ -79,7 +120,7 @@ abstract class Publicize_Base {
 	abstract function connect_url( $service_name );
 	abstract function disconnect_url( $service_name, $id );
 	abstract function get_connection_meta( $connection );
-	abstract function get_services( $filter );
+	abstract function get_services( $filter = 'all' );
 	abstract function get_connections( $service, $_blog_id = false, $_user_id = false );
 	abstract function get_connection( $service, $id, $_blog_id = false, $_user_id = false );
 	abstract function flag_post_for_publicize( $new_status, $old_status, $post );
@@ -93,8 +134,8 @@ abstract class Publicize_Base {
 	/**
 	* Returns an external URL to the connection's profile
 	*/
-	function get_profile_link( $service_name, $c ) {
-		$cmeta = $this->get_connection_meta( $c );
+	function get_profile_link( $service_name, $connection ) {
+		$cmeta = $this->get_connection_meta( $connection );
 
 		if ( isset( $cmeta['connection_data']['meta']['link'] ) ) {
 			if ( 'facebook' == $service_name && 0 === strpos( parse_url( $cmeta['connection_data']['meta']['link'], PHP_URL_PATH ), '/app_scoped_user_id/' ) ) {
@@ -104,7 +145,7 @@ abstract class Publicize_Base {
 
 			return $cmeta['connection_data']['meta']['link'];
 		} elseif ( 'facebook' == $service_name && isset( $cmeta['connection_data']['meta']['facebook_page'] ) ) {
-			return 'https://www.facebook.com/' . $cmeta['connection_data']['meta']['facebook_page'];
+			return 'https://facebook.com/' . $cmeta['connection_data']['meta']['facebook_page'];
 		} elseif ( 'tumblr' == $service_name && isset( $cmeta['connection_data']['meta']['tumblr_base_hostname'] ) ) {
 			 return 'http://' . $cmeta['connection_data']['meta']['tumblr_base_hostname'];
 		} elseif ( 'twitter' == $service_name ) {
@@ -137,8 +178,8 @@ abstract class Publicize_Base {
 	/**
 	* Returns a display name for the connection
 	*/
-	function get_display_name( $service_name, $c ) {
-		$cmeta = $this->get_connection_meta( $c );
+	function get_display_name( $service_name, $connection ) {
+		$cmeta = $this->get_connection_meta( $connection );
 
 		if ( isset( $cmeta['connection_data']['meta']['display_name'] ) ) {
 			return $cmeta['connection_data']['meta']['display_name'];
@@ -171,8 +212,8 @@ abstract class Publicize_Base {
 		}
 	}
 
-	function show_options_popup( $service_name, $c ) {
-		$cmeta = $this->get_connection_meta( $c );
+	function show_options_popup( $service_name, $connection ) {
+		$cmeta = $this->get_connection_meta( $connection );
 
 		// always show if no selection has been made for facebook
 		if ( 'facebook' == $service_name && empty( $cmeta['connection_data']['meta']['facebook_profile'] ) && empty( $cmeta['connection_data']['meta']['facebook_page'] ) )
@@ -182,7 +223,7 @@ abstract class Publicize_Base {
 		if ( 'tumblr' == $service_name && empty ( $cmeta['connection_data']['meta']['tumblr_base_hostname'] ) )
 			return true;
 
-		// if we have the specific conncetion info..
+		// if we have the specific connection info..
 		if ( isset( $_GET['id'] ) ) {
 			if ( $cmeta['connection_data']['id'] == $_GET['id'] )
 				return true;
@@ -220,7 +261,7 @@ abstract class Publicize_Base {
 
 	/**
 	* Fires when a post is saved, checks conditions and saves state in postmeta so that it
-	* can be picked up later by @see ::publicize_post()
+	* can be picked up later by @see ::publicize_post() on WordPress.com codebase.
 	*/
 	function save_meta( $post_id, $post ) {
 		$cron_user = null;
@@ -232,8 +273,9 @@ abstract class Publicize_Base {
 		// Don't Publicize during certain contexts:
 
 		// - import
-		if ( defined( 'WP_IMPORTING' ) && WP_IMPORTING  )
+		if ( defined( 'WP_IMPORTING' ) && WP_IMPORTING  ) {
 			$submit_post = false;
+		}
 
 		// - on quick edit, autosave, etc but do fire on p2, quickpress, and instapost ajax
 		if (
@@ -248,13 +290,16 @@ abstract class Publicize_Base {
 			!did_action( 'wp_ajax_instapost_publish' )
 		&&
 			!did_action( 'wp_ajax_post_reblog' )
+		&&
+			!did_action( 'wp_ajax_press-this-save-post' )
 		) {
 			$submit_post = false;
 		}
 
 		// - bulk edit
-		if ( isset( $_GET['bulk_edit'] ) )
+		if ( isset( $_GET['bulk_edit'] ) ) {
 			$submit_post = false;
+		}
 
 		// - API/XML-RPC Test Posts
 		if (
@@ -274,18 +319,29 @@ abstract class Publicize_Base {
 		}
 
 		// only work with certain statuses (avoids inherits, auto drafts etc)
-		if ( !in_array( $post->post_status, array( 'publish', 'draft', 'future' ) ) )
+		if ( !in_array( $post->post_status, array( 'publish', 'draft', 'future' ) ) ) {
 			$submit_post = false;
+		}
 
 		// don't publish password protected posts
-		if ( '' !== $post->post_password )
+		if ( '' !== $post->post_password ) {
 			$submit_post = false;
+		}
 
 		// Did this request happen via wp-admin?
-		$from_web = 'post' == strtolower( $_SERVER['REQUEST_METHOD'] ) && isset( $_POST[$this->ADMIN_PAGE] );
+		$from_web = isset( $_SERVER['REQUEST_METHOD'] )
+			&&
+			'post' == strtolower( $_SERVER['REQUEST_METHOD'] )
+			&&
+			isset( $_POST[$this->ADMIN_PAGE] );
 
-		if ( ( $from_web || defined( 'POST_BY_EMAIL' ) ) && !empty( $_POST['wpas_title'] ) )
-			update_post_meta( $post_id, $this->POST_MESS, trim( stripslashes( $_POST['wpas_title'] ) ) );
+		if ( ( $from_web || defined( 'POST_BY_EMAIL' ) ) && isset( $_POST['wpas_title'] ) ) {
+			if ( empty( $_POST['wpas_title'] ) ) {
+				delete_post_meta( $post_id, $this->POST_MESS );
+			} else {
+				update_post_meta( $post_id, $this->POST_MESS, trim( stripslashes( $_POST['wpas_title'] ) ) );
+			}
+		}
 
 		// change current user to provide context for get_services() if we're running during cron
 		if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
@@ -305,6 +361,7 @@ abstract class Publicize_Base {
 				elseif ( ! empty( $connection['connection_data'] ) )
 					$connection_data = $connection['connection_data'];
 
+				/** This action is documented in modules/publicize/ui.php */
 				if ( false == apply_filters( 'wpas_submit_post?', $submit_post, $post_id, $service_name, $connection_data ) ) {
 					delete_post_meta( $post_id, $this->PENDING );
 					continue;
@@ -319,7 +376,7 @@ abstract class Publicize_Base {
 				if ( $from_web ) {
 					// delete stray service-based post meta
 					delete_post_meta( $post_id, $this->POST_SKIP . $service_name );
-	
+
 					// We *unchecked* this stream from the admin page, or it's set to readonly, or it's a new addition
 					if ( empty( $_POST[$this->ADMIN_PAGE]['submit'][$unique_id] ) ) {
 						// Also make sure that the service-specific input isn't there.
@@ -339,8 +396,18 @@ abstract class Publicize_Base {
 					}
 				}
 
-				// Users may hook in here and do anything else they need to after meta is written,
-				// and before the post is processed for Publicize.
+				/**
+				 * Fires right before the post is processed for Publicize.
+				 * Users may hook in here and do anything else they need to after meta is written,
+				 * and before the post is processed for Publicize.
+				 *
+				 * @since 2.1.2
+				 *
+				 * @param bool $submit_post Should the post be publicized.
+				 * @param int $post->ID Post ID.
+				 * @param string $service_name Service name.
+				 * @param array $connection Array of connection details.
+				 */
 				do_action( 'publicize_save_meta', $submit_post, $post_id, $service_name, $connection );
 			}
 		}
@@ -352,15 +419,99 @@ abstract class Publicize_Base {
 		// Next up will be ::publicize_post()
 	}
 
+	public function update_published_message( $messages ) {
+		global $post_type, $post_type_object, $post;
+		if ( ! $this->post_type_is_publicizeable( $post_type ) ) {
+			return $messages;
+		}
+		$view_post_link_html = '';
+		$viewable = is_post_type_viewable( $post_type_object );
+		if ( $viewable ) {
+			$view_text = esc_html__( 'View post' ); // intentionally omitted domain
+
+			if ( 'jetpack-portfolio' == $post_type ) {
+				$view_text = esc_html__( 'View project', 'jetpack' );
+			}
+
+			$view_post_link_html = sprintf( ' <a href="%1$s">%2$s</a>',
+				esc_url( get_permalink( $post ) ),
+				$view_text
+			);
+		}
+
+		$services = $this->get_publicizing_services( $post->ID );
+		if ( empty( $services ) ) {
+			return $messages;
+		}
+
+		$labels = array();
+		foreach ( $services as $service => $display_names ) {
+			$labels[] = sprintf(
+				/* translators: Service name is %1$s, and account name is %2$s. */
+				esc_html__( '%1$s (%2$s)', 'jetpack' ),
+				esc_html( $service ),
+				esc_html( implode( ', ', $display_names ) )
+			);
+		}
+
+		$messages['post'][6] = sprintf(
+			/* translators: %1$s is a comma-separated list of services and accounts. Ex. Facebook (@jetpack), Twitter (@jetpack) */
+			esc_html__( 'Post published and sharing on %1$s.', 'jetpack' ),
+			implode( ', ', $labels )
+		) . $view_post_link_html;
+
+		if ( $post_type == 'post' && class_exists('Jetpack_Subscriptions' ) ) {
+			$subscription = Jetpack_Subscriptions::init();
+			if ( $subscription->should_email_post_to_subscribers( $post ) ) {
+				$messages['post'][6] = sprintf(
+					/* translators: %1$s is a comma-separated list of services and accounts. Ex. Facebook (@jetpack), Twitter (@jetpack) */
+					esc_html__( 'Post published, sending emails to subscribers and sharing post on %1$s.', 'jetpack' ),
+					implode( ', ', $labels )
+				) . $view_post_link_html;
+			}
+		}
+
+		$messages['jetpack-portfolio'][6] = sprintf(
+			/* translators: %1$s is a comma-separated list of services and accounts. Ex. Facebook (@jetpack), Twitter (@jetpack) */
+			esc_html__( 'Project published and sharing project on %1$s.', 'jetpack' ),
+			implode( ', ', $labels )
+		) . $view_post_link_html;
+
+		return $messages;
+	}
+
+	function get_publicizing_services( $post_id ) {
+		$services = array();
+
+		foreach ( (array) $this->get_services( 'connected' ) as $service_name => $connections ) {
+			// services have multiple connections.
+			foreach ( $connections as $connection ) {
+				$unique_id = '';
+				if ( ! empty( $connection->unique_id ) )
+					$unique_id = $connection->unique_id;
+				else if ( ! empty( $connection['connection_data']['token_id'] ) )
+					$unique_id = $connection['connection_data']['token_id'];
+
+				// Did we skip this connection?
+				if ( get_post_meta( $post_id, $this->POST_SKIP . $unique_id,  true ) ) {
+					continue;
+				}
+				$services[ $this->get_service_label( $service_name ) ][] = $this->get_display_name( $service_name, $connection );
+			}
+		}
+
+		return $services;
+	}
+
 	/**
-	 * Is a given post type Publicize-able?
-	 *
-	 * Not every CPT lends itself to Publicize-ation.  Allow CPTs to register by adding their CPT via
-	 * the publicize_post_types array filter.
-	 *
-	 * @param string $post_type The post type to check.
-	 * $return bool True if the post type can be Publicized.
-	 */
+	* Is a given post type Publicize-able?
+	*
+	* Not every CPT lends itself to Publicize-ation.  Allow CPTs to register by adding their CPT via
+	* the publicize_post_types array filter.
+	*
+	* @param string $post_type The post type to check.
+	* @return bool True if the post type can be Publicized.
+	*/
 	function post_type_is_publicizeable( $post_type ) {
 		if ( 'post' == $post_type )
 			return true;
@@ -413,5 +564,34 @@ abstract class Publicize_Base {
 		}
 
 		wp_send_json_success( $test_results );
+	}
+
+	protected static function build_sprintf( $args ) {
+		$search = array();
+		$replace = array();
+		foreach ( $args as $k => $arg ) {
+			if ( 0 == $k ) {
+				$string = $arg;
+				continue;
+			}
+			$search[] = "%$arg%";
+			$replace[] = "%$k\$s";
+		}
+		return str_replace( $search, $replace, $string );
+	}
+}
+
+function publicize_calypso_url() {
+	$calypso_sharing_url = 'https://wordpress.com/sharing/';
+	if ( class_exists( 'Jetpack' ) && method_exists( 'Jetpack', 'build_raw_urls' ) ) {
+		$site_suffix = Jetpack::build_raw_urls( home_url() );
+	} elseif ( class_exists( 'WPCOM_Masterbar' ) && method_exists( 'WPCOM_Masterbar', 'get_calypso_site_slug' ) ) {
+		$site_suffix = WPCOM_Masterbar::get_calypso_site_slug( get_current_blog_id() );
+	}
+
+	if ( $site_suffix ) {
+		return $calypso_sharing_url . $site_suffix;
+	} else {
+		return $calypso_sharing_url;
 	}
 }
