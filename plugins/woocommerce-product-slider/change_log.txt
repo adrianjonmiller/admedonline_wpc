@@ -1,0 +1,34 @@
+Change Log
+----------
+v1.5.5 updated 09th July 2014
+* Customization support to slider (background/border/price/title colors and padding)
+
+v1.5.4 updated 05th July 2014
+* Fixed small bug
+
+v1.5.3 updated 24th June 2014
+* Support to external products
+* Added support to have NEW,FEATURED and SALE Products to the slider
+* Adding support to Sale Price
+* MouseWheel issue fixed
+
+
+v1.5.2 Updated 06th Dec 2013
+* Compatible to Woocommerce V2
+
+v1.5.1 Updated 11th Aug 2013
+* Fixed the Vertical slider issue with custom-blank.css template
+
+v1.5 Updated 29th July 2013
+* Added Category (slug) support to shortcode
+
+v1.4 Updated 11th March 2013
+* Fixed the price and number of products to display issue.
+
+v1.3 Updated 28th August 2012
+* Added product tag(slug) support to shortcode
+
+v1.2 Updated 10th August 2012
+* Major cleanup and restructuring of CSS
+* Fixed sidebar/vertical CSS
+* Added new arrow images

@@ -1,0 +1,13 @@
+/**
+ * styles.scss
+ * ---
+ * Main `sass` file. Import here `sass` files
+ */
+
+// Modules
+@import 
+	"modules/variables",
+	"modules/fonts",
+	"../../bower_components/thin/scss/thin",
+	"partials/theme";
+// Partials

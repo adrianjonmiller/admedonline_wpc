@@ -1,0 +1,378 @@
+# Copyright (C) 2015 SkyVerge
+# This file is distributed under the GNU General Public License v3.0.
+msgid ""
+msgstr ""
+"Project-Id-Version: WooCommerce Elavon VM Gateway 1.3.0\n"
+"Report-Msgid-Bugs-To: https://support.woothemes.com/hc/\n"
+"POT-Creation-Date: 2014-06-15 22:41:26+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2015-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+
+#: includes/class-wc-elavon-vm-api.php:148
+msgid ""
+"Request Time (s): %s\n"
+"Request Method: %s\n"
+"Request URI: %s\n"
+"Request Body:\n"
+" %s"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:82
+msgid "Elavon VM"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:83
+msgid ""
+"Elavon VM Payment Gateway provides a seamless and secure checkout process "
+"for your customers"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:104
+msgid "TEST MODE ENABLED"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:107
+msgid "ENVIRONMENT: DEMO"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:132
+msgid "Enable"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:133
+msgid "Enable Elavon VM"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:140
+msgid "Title"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:142
+msgid "Payment method title that the customer will see on your website."
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:143
+msgid "Credit Card"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:147
+msgid "Description"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:149
+msgid "Payment method description that the customer will see on your website."
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:150
+msgid "Pay securely using your credit card."
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:154
+msgid "Submit for Settlement"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:155
+msgid "Submit all transactions for settlement immediately."
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:162
+msgid "Card Verification"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:163
+msgid "Require customer to enter credit card verification code"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:169
+msgid "Accepted Card Logos"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:173
+msgid ""
+"Select which card types you accept to display the logos for on your "
+"checkout page.  This is purely cosmetic and optional, and will have no "
+"impact on the cards actually accepted by your account."
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:188
+msgid "Account"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:190
+msgid "What account do you want your transactions posted to?"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:193
+msgid "Production"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:194
+msgid "Demo"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:199
+msgid "Test Mode"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:200
+msgid "Enable Test Mode"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:202
+msgid ""
+"Place the payment gateway in test mode for your production account, "
+"transactions will not be posted to your account or credit card processor."
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:207
+msgid "Merchant ID"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:209
+msgid ""
+"VirtualMerchant ID/Account ID as provided by Elavon.  This will be six "
+"digits long, and start with the number 5 or 6."
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:214
+msgid "User ID"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:216
+msgid "Virtual Merchant user ID as configured on Virtual Merchant"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:221
+msgid "PIN"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:223
+msgid "VirtualMerchant PIN as generated within VirtualMerchant"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:228
+msgid "Demo Merchant ID"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:230
+msgid ""
+"VirtualMerchant ID/Account ID as provided by Elavon for your demo account.  "
+"This will be six digits long, and start with the number 5 or 6."
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:235
+msgid "Demo User ID"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:237
+msgid "Virtual Merchant demo user ID as configured on Virtual Merchant"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:242
+msgid "Demo PIN"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:244
+msgid "VirtualMerchant demo PIN as generated within VirtualMerchant"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:249
+msgid "Debug Mode"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:251
+msgid ""
+"Show Detailed Error Messages and API requests / responses on the checkout "
+"page and/or save them to the log for debugging purposes."
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:254
+msgid "Off"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:255
+msgid "Show on Checkout Page"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:256
+msgid "Save to Log"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:257
+msgid "Both"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:359
+msgid "Credit Card number"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:363
+msgid "Expiration date"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:365
+msgid "Month"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:371
+msgid "Year"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:382
+msgid "Card security code"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:424
+msgid "Credit Card Transaction Approved: %s (%s)"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:445
+msgid "Elavon VM Credit Card payment failed (Result: [%s] - \"%s\")."
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:447
+msgid "Elavon VM Credit Card payment failed (Result: [%s] %s - \"%s\")."
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:452
+msgid ""
+"Voice authorization required to complete transaction, please call your "
+"merchant account."
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:461
+msgid "An error occurred, please try again or try an alternate form of payment"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:466
+msgid ""
+"This transaction request has not been approved. You may elect to use "
+"another form of payment to complete this transaction or contact customer "
+"service for additional options."
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:482
+msgid "Connection error"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:530
+msgid ""
+"The billing %s is too long, %d characters maximum are allowed.  Please fix "
+"the %s and try again."
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:533
+msgid ""
+"The %s is too long, %d characters maximum are allowed.  Please fix the %s "
+"and try again."
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:544
+msgid "Card security code is missing"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:549
+msgid "Card security code is invalid (only digits are allowed)"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:554
+msgid "Card security code is invalid (wrong length)"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:570
+msgid "Card expiration date is invalid"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:578
+msgid "Card number is invalid"
+msgstr ""
+
+#: lib/skyverge/woocommerce/class-sv-wc-admin-notice-handler.php:196
+msgid "Dismiss"
+msgstr ""
+
+#: lib/skyverge/woocommerce/class-sv-wc-plugin.php:192
+msgid "You cannot clone instances of %s."
+msgstr ""
+
+#: lib/skyverge/woocommerce/class-sv-wc-plugin.php:201
+msgid "You cannot unserialize instances of %s."
+msgstr ""
+
+#: lib/skyverge/woocommerce/class-sv-wc-plugin.php:319
+msgid ""
+"%s requires the %s PHP extension to function.  Contact your host or server "
+"administrator to configure and install the missing extension."
+msgid_plural ""
+"%s requires the following PHP extensions to function: %s.  Contact your "
+"host or server administrator to configure and install the missing "
+"extensions."
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/skyverge/woocommerce/class-sv-wc-plugin.php:339
+msgid ""
+"%s requires the %s PHP function to exist.  Contact your host or server "
+"administrator to configure and install the missing function."
+msgid_plural ""
+"%s requires the following PHP functions to exist: %s.  Contact your host or "
+"server administrator to configure and install the missing functions."
+msgstr[0] ""
+msgstr[1] ""
+
+#: lib/skyverge/woocommerce/class-sv-wc-plugin.php:374
+msgid "Docs"
+msgstr ""
+
+#: lib/skyverge/woocommerce/class-sv-wc-plugin.php:378
+msgid "Support"
+msgstr ""
+
+#: lib/skyverge/woocommerce/class-sv-wc-plugin.php:382
+msgid "Write a Review"
+msgstr ""
+
+#: lib/skyverge/woocommerce/class-sv-wc-plugin.php:632
+msgid "Configure"
+msgstr ""
+
+#. Plugin Name of the plugin/theme
+msgid "WooCommerce Elavon VM Gateway"
+msgstr ""
+
+#: woocommerce-gateway-elavon.php:242
+msgid ""
+"%Elavon Error%s: WooCommerce is not being forced over SSL; your customer's "
+"payment data is at risk."
+msgstr ""
+
+#: woocommerce-gateway-elavon.php:277
+msgid "WooCommerce Elavon"
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "http://www.woothemes.com/products/elavon-vm-payment-gateway/"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid ""
+"Adds the Elavon Virtual Merchant Gateway to your WooCommerce website. "
+"Requires an SSL certificate."
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "SkyVerge"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://www.skyverge.com"
+msgstr ""
+
+#: includes/class-wc-gateway-elavon-vm.php:625
+msgctxt "hash before order number"
+msgid "#"
+msgstr ""

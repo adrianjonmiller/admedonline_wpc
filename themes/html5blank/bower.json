@@ -1,0 +1,15 @@
+{
+  "name": "HTML5Blank",
+  "version": "1.5.0",
+  "author": "Todd Motto",
+  "devDependencies": {
+    "jquery": "~1.11.1",
+    "modernizr": "~2.8.3",
+    "normalize.css": "~3.0.1"
+  },
+  "dependencies": {
+    "thin": "git@github.com:fathomles/thin.git#~0.0.1",
+    "flexslider": "*",
+    "ionicons": "~2.0.0"
+  }
+}
