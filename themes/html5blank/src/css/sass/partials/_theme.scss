@@ -247,3 +247,22 @@ button {
 		background-color: darken(#777, 10%);
 	}
 }
+
+.woocommerce ul.products li.first,
+.woocommerce-page ul.products li.first {
+	clear: none !important;
+}
+
+.woocommerce ul.products li,
+.woocommerce-page ul.products li {
+	margin: 0 !important;
+	padding-left: 1rem !important;
+	min-height: 360px;
+}
+
+
+.woocommerce ul.products,
+.woocommerce-page ul.products {
+	background-color: #fafafa;
+	padding: 1rem 1rem 1rem 0;
+}
