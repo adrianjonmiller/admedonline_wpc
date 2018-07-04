@@ -1,0 +1,14 @@
+2018-07-04T04:29:16+00:00 CRITICAL Call to undefined function wp_parse_url()
+
+2018-07-04T04:29:23+00:00 CRITICAL Call to undefined function wp_parse_url()
+
+2018-07-04T04:30:20+00:00 CRITICAL Call to undefined function get_the_post_thumbnail_url()
+
+2018-07-04T04:31:14+00:00 CRITICAL Call to undefined function wp_parse_url()
+
+2018-07-04T04:35:47+00:00 CRITICAL Call to undefined function is_embed()
+
+2018-07-04T04:40:25+00:00 CRITICAL Call to undefined function is_embed()
+
+2018-07-04T04:43:02+00:00 CRITICAL Call to undefined function is_embed()
+
